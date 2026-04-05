@@ -55,7 +55,7 @@ const Map = forwardRef<MapHandle, MapProps>(({ onLocationReady }, ref) => {
           marker.remove();
           markers.current.delete(reaction.id);
         }, 1000);
-      }, 60_000);
+      }, 300_000); // 5분
     },
     getMap: () => map.current,
   }));
@@ -74,6 +74,22 @@ const Map = forwardRef<MapHandle, MapProps>(({ onLocationReady }, ref) => {
         center,
         zoom: DEFAULT_ZOOM,
         attributionControl: false,
+      });
+
+      // 한국어 라벨
+      map.current.on("style.load", () => {
+        map.current?.getStyle().layers?.forEach((layer) => {
+          if (
+            layer.type === "symbol" &&
+            (layer.layout as Record<string, unknown>)?.["text-field"]
+          ) {
+            map.current?.setLayoutProperty(layer.id, "text-field", [
+              "coalesce",
+              ["get", "name_ko"],
+              ["get", "name"],
+            ]);
+          }
+        });
       });
 
       map.current.addControl(

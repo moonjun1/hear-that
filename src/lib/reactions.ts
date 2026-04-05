@@ -4,7 +4,7 @@ import { getH3Index } from "./geo";
 import type { Reaction } from "@/types";
 
 const COOLDOWN_KEY = "hear-that-last-reaction";
-const COOLDOWN_MS = 30_000;
+const COOLDOWN_MS = 10_000; // 10초
 
 function isOnCooldown(): boolean {
   const last = localStorage.getItem(COOLDOWN_KEY);

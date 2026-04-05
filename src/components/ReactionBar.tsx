@@ -18,7 +18,7 @@ export default function ReactionBar({ onReact, disabled }: ReactionBarProps) {
       if (cooldown || disabled) return;
       onReact(emoji);
       setCooldown(true);
-      setTimeout(() => setCooldown(false), 30000);
+      setTimeout(() => setCooldown(false), 10000);
     },
     [cooldown, disabled, onReact]
   );
@@ -30,7 +30,7 @@ export default function ReactionBar({ onReact, disabled }: ReactionBarProps) {
       onReact("💬", text.trim());
       setText("");
       setCooldown(true);
-      setTimeout(() => setCooldown(false), 30000);
+      setTimeout(() => setCooldown(false), 10000);
     },
     [text, cooldown, disabled, onReact]
   );
@@ -57,7 +57,7 @@ export default function ReactionBar({ onReact, disabled }: ReactionBarProps) {
           type="text"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder={cooldown ? "30초 후 다시 반응 가능" : "반응을 남겨보세요..."}
+          placeholder={cooldown ? "10초 후 다시 반응 가능" : "반응을 남겨보세요..."}
           maxLength={200}
           disabled={cooldown || disabled}
           className="flex-1 bg-[#1a1a3a] border border-[var(--border)] rounded-full px-4 py-2.5 text-sm outline-none focus:border-[var(--accent)] disabled:opacity-40 placeholder:text-gray-600"

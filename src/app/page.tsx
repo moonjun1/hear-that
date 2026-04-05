@@ -77,8 +77,9 @@ export default function Home() {
 
   const handleReact = useCallback(
     async (emoji: string, text?: string) => {
-      if (!userLat || !userLng) return;
-      const result = await submitReaction(userLat, userLng, emoji, text);
+      const lat = userLat ?? 37.5665; // 서울 fallback
+      const lng = userLng ?? 126.978;
+      const result = await submitReaction(lat, lng, emoji, text);
       if (!result.success) console.error(result.error);
     },
     [userLat, userLng]
@@ -119,7 +120,7 @@ export default function Home() {
           userLat={userLat}
           userLng={userLng}
         />
-        <ReactionBar onReact={handleReact} disabled={!userLat || !userLng} />
+        <ReactionBar onReact={handleReact} />
       </div>
 
       {/* Mobile: bottom sheet */}
@@ -131,7 +132,7 @@ export default function Home() {
             userLat={userLat}
             userLng={userLng}
           />
-          <ReactionBar onReact={handleReact} disabled={!userLat || !userLng} />
+          <ReactionBar onReact={handleReact} />
         </div>
       </BottomSheet>
     </div>
