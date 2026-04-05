@@ -48,7 +48,11 @@ export default function Home() {
 
     fetchRecentReactions(neighbors).then((existing) => {
       setReactions(existing);
-      existing.forEach((r) => mapRef.current?.addReactionMarker(r));
+      // 마커는 최근 5분 이내만
+      const fiveMinAgo = Date.now() - 5 * 60 * 1000;
+      existing
+        .filter((r) => new Date(r.created_at).getTime() > fiveMinAgo)
+        .forEach((r) => mapRef.current?.addReactionMarker(r));
     });
 
     const unsubReactions = subscribeToReactions(neighbors, (newReaction) => {
