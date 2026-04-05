@@ -3,6 +3,7 @@
 import type { Reaction, WeatherEvent } from "@/types";
 import { nicknameFromUuid } from "@/lib/nickname";
 import { getDeviceUUID } from "@/lib/device";
+import EmojiStats from "./EmojiStats";
 
 interface FeedPanelProps {
   reactions: Reaction[];
@@ -77,6 +78,9 @@ export default function FeedPanel({
           </button>
         )}
       </div>
+
+      {/* Emoji stats */}
+      <EmojiStats reactions={reactions} />
 
       {/* Feed list */}
       <div className="flex-1 overflow-y-auto">

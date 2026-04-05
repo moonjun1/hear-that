@@ -7,6 +7,8 @@ import MapStats from "@/components/MapStats";
 import FeedPanel from "@/components/FeedPanel";
 import ReactionBar from "@/components/ReactionBar";
 import BottomSheet from "@/components/BottomSheet";
+import ToastContainer, { showToast } from "@/components/Toast";
+import EmojiStats from "@/components/EmojiStats";
 import {
   submitReaction,
   subscribeToReactions,
@@ -127,7 +129,11 @@ export default function Home() {
       const lat = userLat ?? 37.5665;
       const lng = userLng ?? 126.978;
       const result = await submitReaction(lat, lng, emoji, text);
-      if (!result.success) console.error(result.error);
+      if (result.success) {
+        showToast("반응 등록!", emoji);
+      } else {
+        showToast(result.error || "오류 발생");
+      }
     },
     [userLat, userLng]
   );
@@ -167,11 +173,30 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
+  const flyToMyLocation = useCallback(() => {
+    const m = mapRef.current?.getMap();
+    if (m && userLat && userLng) {
+      m.flyTo({ center: [userLng, userLat], zoom: 14, duration: 1000 });
+    }
+  }, [userLat, userLng]);
+
   return (
     <div className="flex h-screen">
+      <ToastContainer />
+
       {/* Map area */}
       <div className="flex-1 relative">
         <Map ref={mapRef} onLocationReady={handleLocationReady} />
+
+        {/* 내 위치로 돌아가기 */}
+        {userLat && userLng && (
+          <button
+            onClick={flyToMyLocation}
+            className="absolute top-20 left-5 z-10 bg-black/60 backdrop-blur-md px-3 py-2 rounded-lg text-sm text-gray-300 hover:text-[var(--accent)] transition-colors"
+          >
+            📍 내 위치
+          </button>
+        )}
         <ThunderWave
           getMap={() => mapRef.current?.getMap() ?? null}
           weatherEvents={weatherEvents}
