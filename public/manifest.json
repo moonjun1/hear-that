@@ -1,0 +1,22 @@
+{
+  "name": "Hear That? ⚡",
+  "short_name": "HearThat",
+  "description": "천둥이 치면 같은 동네 사람들의 반응을 실시간으로 본다",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a1a",
+  "theme_color": "#0a0a1a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
