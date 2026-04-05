@@ -37,6 +37,7 @@ const Map = forwardRef<MapHandle, MapProps>(({ onLocationReady }, ref) => {
   const emojiMarkers = useRef<Map<string, mapboxgl.Marker>>(new globalThis.Map());
   const lastLightningPositions = useRef<[number, number][]>([]);
   const seenLightningIds = useRef<Set<string>>(new Set());
+  const geocodeCache = useRef<Map<string, string>>(new globalThis.Map());
 
   function updateSource() {
     const source = map.current?.getSource(SOURCE_ID) as mapboxgl.GeoJSONSource | undefined;
@@ -162,20 +163,28 @@ const Map = forwardRef<MapHandle, MapProps>(({ onLocationReady }, ref) => {
       );
       marker.setPopup(popup);
 
-      // 클릭 시 역지오코딩
+      // 클릭 시 역지오코딩 (캐시 사용)
       el.addEventListener("click", () => {
         const locEl = document.getElementById(`lightning-loc-${event.id}`);
         if (locEl && locEl.textContent === "위치 확인 중...") {
+          const cacheKey = `${event.lat.toFixed(2)},${event.lng.toFixed(2)}`;
+          const cached = geocodeCache.current.get(cacheKey);
+          if (cached) {
+            locEl.textContent = cached;
+            return;
+          }
           fetch(
             `https://api.mapbox.com/geocoding/v5/mapbox.places/${event.lng},${event.lat}.json?types=locality,place,district&language=ko&access_token=${MAPBOX_TOKEN}`
           )
             .then((r) => r.json())
             .then((data) => {
               const name = data.features?.[0]?.place_name || `${event.lat.toFixed(2)}°N ${event.lng.toFixed(2)}°E`;
+              geocodeCache.current.set(cacheKey, name);
               if (locEl) locEl.textContent = name;
             })
             .catch(() => {
-              if (locEl) locEl.textContent = `${event.lat.toFixed(2)}°N ${event.lng.toFixed(2)}°E`;
+              const fallback = `${event.lat.toFixed(2)}°N ${event.lng.toFixed(2)}°E`;
+              if (locEl) locEl.textContent = fallback;
             });
         }
       });
@@ -377,7 +386,7 @@ const Map = forwardRef<MapHandle, MapProps>(({ onLocationReady }, ref) => {
           initMap(DEFAULT_CENTER);
           onLocationReady?.(DEFAULT_CENTER[1], DEFAULT_CENTER[0]);
         },
-        { enableHighAccuracy: true, timeout: 5000 }
+        { enableHighAccuracy: true, timeout: 10000 }
       );
     } else {
       initMap(DEFAULT_CENTER);

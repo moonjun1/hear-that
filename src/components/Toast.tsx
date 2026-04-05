@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 
 interface ToastMessage {
   id: number;
@@ -9,7 +9,7 @@ interface ToastMessage {
 }
 
 let toastId = 0;
-const listeners: ((msg: ToastMessage) => void)[] = [];
+const listeners = new Set<(msg: ToastMessage) => void>();
 
 export function showToast(text: string, emoji?: string) {
   const msg = { id: ++toastId, text, emoji };
@@ -26,10 +26,9 @@ export default function ToastContainer() {
         setToasts((prev) => prev.filter((t) => t.id !== msg.id));
       }, 2000);
     };
-    listeners.push(handler);
+    listeners.add(handler);
     return () => {
-      const idx = listeners.indexOf(handler);
-      if (idx >= 0) listeners.splice(idx, 1);
+      listeners.delete(handler);
     };
   }, []);
 
