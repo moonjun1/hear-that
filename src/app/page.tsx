@@ -139,6 +139,7 @@ export default function Home() {
           userLng={userLng}
           lightningCount={lightningCount}
           lastThunder={lastThunder}
+          onLightningClick={() => mapRef.current?.flyToLightning()}
         />
         <ReactionBar onReact={handleReact} />
       </div>

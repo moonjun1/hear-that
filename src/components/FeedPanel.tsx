@@ -11,6 +11,7 @@ interface FeedPanelProps {
   userLng?: number | null;
   lightningCount?: number;
   lastThunder?: string | null;
+  onLightningClick?: () => void;
 }
 
 function timeAgo(dateStr: string): string {
@@ -49,6 +50,7 @@ export default function FeedPanel({
   userLng,
   lightningCount = 0,
   lastThunder,
+  onLightningClick,
 }: FeedPanelProps) {
   const myUuid = typeof window !== "undefined" ? getDeviceUUID() : "";
 
@@ -63,12 +65,16 @@ export default function FeedPanel({
 
         {/* 번개 활동 배너 */}
         {lightningCount > 0 && (
-          <div className="mt-2 bg-[var(--accent)]/10 border border-[var(--accent)]/20 rounded-lg px-3 py-2 flex items-center gap-2">
+          <button
+            onClick={onLightningClick}
+            className="mt-2 w-full bg-[var(--accent)]/10 border border-[var(--accent)]/20 rounded-lg px-3 py-2 flex items-center gap-2 hover:bg-[var(--accent)]/20 transition-colors cursor-pointer text-left"
+          >
             <span className="text-lg">⚡</span>
-            <span className="text-sm text-[var(--accent)]">
+            <span className="text-sm text-[var(--accent)] flex-1">
               전국에서 번개 {lightningCount}건 감지 · {lastThunder || "방금"}
             </span>
-          </div>
+            <span className="text-xs text-gray-500">보러가기 →</span>
+          </button>
         )}
       </div>
 

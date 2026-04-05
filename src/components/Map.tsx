@@ -16,6 +16,7 @@ const UNCLUSTERED_LAYER = "unclustered-point";
 export interface MapHandle {
   addReactionMarker: (reaction: Reaction) => void;
   addLightningMarker: (event: WeatherEvent) => void;
+  flyToLightning: () => void;
   getMap: () => mapboxgl.Map | null;
 }
 
@@ -34,6 +35,7 @@ const Map = forwardRef<MapHandle, MapProps>(({ onLocationReady }, ref) => {
   });
   const seenIds = useRef<Set<string>>(new Set());
   const emojiMarkers = useRef<Map<string, mapboxgl.Marker>>(new globalThis.Map());
+  const lastLightningPositions = useRef<[number, number][]>([]);
 
   function updateSource() {
     const source = map.current?.getSource(SOURCE_ID) as mapboxgl.GeoJSONSource | undefined;
@@ -122,6 +124,12 @@ const Map = forwardRef<MapHandle, MapProps>(({ onLocationReady }, ref) => {
     addLightningMarker(event: WeatherEvent) {
       if (!map.current) return;
 
+      lastLightningPositions.current.push([event.lng, event.lat]);
+      // 최근 50개만 유지
+      if (lastLightningPositions.current.length > 50) {
+        lastLightningPositions.current = lastLightningPositions.current.slice(-50);
+      }
+
       const el = document.createElement("div");
       el.textContent = "⚡";
       el.style.cssText =
@@ -137,6 +145,26 @@ const Map = forwardRef<MapHandle, MapProps>(({ onLocationReady }, ref) => {
         el.style.opacity = "0";
         setTimeout(() => marker.remove(), 2000);
       }, 180_000);
+    },
+    flyToLightning() {
+      if (!map.current || !lastLightningPositions.current.length) return;
+
+      const positions = lastLightningPositions.current;
+      if (positions.length === 1) {
+        map.current.flyTo({
+          center: positions[0],
+          zoom: 10,
+          duration: 1500,
+        });
+      } else {
+        const bounds = new mapboxgl.LngLatBounds();
+        positions.forEach((p) => bounds.extend(p));
+        map.current.fitBounds(bounds, {
+          padding: 80,
+          duration: 1500,
+          maxZoom: 10,
+        });
+      }
     },
     getMap: () => map.current,
   }));
