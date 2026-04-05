@@ -10,21 +10,6 @@ export function getH3Neighbors(h3Index: string): string[] {
   return gridDisk(h3Index, 1); // 중심 + 6개 인접 hex
 }
 
-export function getUserLocation(): Promise<{ lat: number; lng: number }> {
-  return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) {
-      reject(new Error("Geolocation not supported"));
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (pos) =>
-        resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      (err) => reject(err),
-      { enableHighAccuracy: true, timeout: 5000 }
-    );
-  });
-}
-
 export function haversineDistance(
   lat1: number,
   lng1: number,

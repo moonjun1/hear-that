@@ -8,7 +8,6 @@ import FeedPanel from "@/components/FeedPanel";
 import ReactionBar from "@/components/ReactionBar";
 import BottomSheet from "@/components/BottomSheet";
 import ToastContainer, { showToast } from "@/components/Toast";
-import EmojiStats from "@/components/EmojiStats";
 import ChatPanel from "@/components/ChatPanel";
 import {
   submitReaction,
@@ -182,7 +181,7 @@ export default function Home() {
             });
           }
         })
-        .catch(() => {});
+        .catch(() => {}); // 네트워크 실패는 조용히 무시 (다음 폴링에서 재시도)
     };
 
     poll();
@@ -194,7 +193,9 @@ export default function Home() {
     async (text: string) => {
       if (!userH3) return;
       const result = await sendChat(userH3, text);
-      if (!result.success) console.error(result.error);
+      if (!result.success) {
+        showToast(result.error || "전송 실패");
+      }
     },
     [userH3]
   );

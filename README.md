@@ -1,36 +1,41 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Hear That? ⚡
 
-## Getting Started
+천둥이 치면 같은 동네 사람들의 반응을 실시간으로 본다.
 
-First, run the development server:
+## Features
+
+- 실시간 이모지/텍스트 반응 (⚡😱🙉😂🌧️)
+- 기상청 낙뢰 API 연동 (1분 자동 폴링)
+- Thunder Wave 동심원 애니메이션 (343m/s 음속)
+- 당근마켓 스타일 마커 클러스터링
+- 지역 채팅 (같은 동네 사람들끼리)
+- H3 기반 지역 묶기 (~9km 반경)
+- 모바일 반응형 (하단 시트)
+- PWA 지원
+
+## Tech Stack
+
+- Next.js 16 (App Router)
+- Supabase (Postgres + Realtime)
+- Mapbox GL JS
+- H3 (geo-bucketing)
+- Vercel (배포)
+
+## Setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
+bun install
+cp .env.local.example .env.local
+# .env.local에 키 입력
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Environment Variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Key | Description |
+|-----|-------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key |
+| `NEXT_PUBLIC_MAPBOX_TOKEN` | Mapbox access token |
+| `KMA_API_KEY` | 기상청 Open API key (data.go.kr) |
