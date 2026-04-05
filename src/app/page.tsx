@@ -9,6 +9,7 @@ import ReactionBar from "@/components/ReactionBar";
 import BottomSheet from "@/components/BottomSheet";
 import ToastContainer, { showToast } from "@/components/Toast";
 import EmojiStats from "@/components/EmojiStats";
+import ChatPanel from "@/components/ChatPanel";
 import {
   submitReaction,
   subscribeToReactions,
@@ -21,7 +22,8 @@ import {
   fetchRecentWeatherEvents,
   fetchAllRecentLightning,
 } from "@/lib/weather";
-import type { Reaction, WeatherEvent } from "@/types";
+import { sendChat, subscribeToChat, fetchRecentChats } from "@/lib/chat";
+import type { Reaction, WeatherEvent, ChatMessage } from "@/types";
 import type { MapHandle } from "@/components/Map";
 
 const Map = dynamic(() => import("@/components/Map"), { ssr: false });
@@ -37,6 +39,9 @@ export default function Home() {
   const [lastThunder, setLastThunder] = useState<string | null>(null);
   const [weatherEvents, setWeatherEvents] = useState<WeatherEvent[]>([]);
   const [lightningCount, setLightningCount] = useState(0);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [activeTab, setActiveTab] = useState<"reactions" | "chat">("reactions");
+  const [userH3, setUserH3] = useState<string>("");
   const mapRef = useRef<MapHandle>(null);
 
   // 구독 중복 방지
@@ -66,6 +71,7 @@ export default function Home() {
 
       const h3Index = getH3Index(lat, lng);
       const neighbors = getH3Neighbors(h3Index);
+      setUserH3(h3Index);
 
       // 기존 구독 정리
       unsubRef.current?.();
@@ -109,9 +115,20 @@ export default function Home() {
         mapRef.current?.addLightningMarker(event);
       });
 
+      // 채팅 로드 + 구독
+      fetchRecentChats(neighbors).then(setChatMessages);
+
+      const seenChatIds = new Set<string>();
+      const unsubChat = subscribeToChat(neighbors, (msg) => {
+        if (seenChatIds.has(msg.id)) return;
+        seenChatIds.add(msg.id);
+        setChatMessages((prev) => [...prev, msg].slice(-200));
+      });
+
       unsubRef.current = () => {
         unsubReactions();
         unsubWeather();
+        unsubChat();
       };
     },
     [addReaction]
@@ -173,6 +190,15 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
+  const handleSendChat = useCallback(
+    async (text: string) => {
+      if (!userH3) return;
+      const result = await sendChat(userH3, text);
+      if (!result.success) console.error(result.error);
+    },
+    [userH3]
+  );
+
   const flyToMyLocation = useCallback(() => {
     const m = mapRef.current?.getMap();
     if (m && userLat && userLng) {
@@ -215,35 +241,73 @@ export default function Home() {
         />
       </div>
 
-      {/* Desktop: side panel */}
-      <div className="hidden md:flex flex-col h-full">
-        <FeedPanel
-          reactions={reactions}
-          areaName={areaName}
-          userLat={userLat}
-          userLng={userLng}
-          lightningCount={lightningCount}
-          lastThunder={lastThunder}
-          onLightningClick={() => mapRef.current?.flyToLightning()}
-        />
-        <ReactionBar onReact={handleReact} />
-      </div>
+      {/* Side panel content (shared between desktop and mobile) */}
+      {(() => {
+        const panelContent = (
+          <div className="flex flex-col h-full">
+            {/* Tabs */}
+            <div className="flex border-b border-[var(--border)]">
+              <button
+                onClick={() => setActiveTab("reactions")}
+                className={`flex-1 py-3 text-sm font-medium transition-colors ${
+                  activeTab === "reactions"
+                    ? "text-[var(--accent)] border-b-2 border-[var(--accent)]"
+                    : "text-gray-500 hover:text-gray-300"
+                }`}
+              >
+                ⚡ 반응
+              </button>
+              <button
+                onClick={() => setActiveTab("chat")}
+                className={`flex-1 py-3 text-sm font-medium transition-colors relative ${
+                  activeTab === "chat"
+                    ? "text-[var(--accent)] border-b-2 border-[var(--accent)]"
+                    : "text-gray-500 hover:text-gray-300"
+                }`}
+              >
+                💬 채팅
+                {chatMessages.length > 0 && activeTab !== "chat" && (
+                  <span className="absolute top-2 right-[calc(50%-20px)] w-2 h-2 bg-[var(--accent)] rounded-full" />
+                )}
+              </button>
+            </div>
 
-      {/* Mobile: bottom sheet */}
-      <BottomSheet>
-        <div className="flex flex-col h-full">
-          <FeedPanel
-            reactions={reactions}
-            areaName={areaName}
-            userLat={userLat}
-            userLng={userLng}
-            lightningCount={lightningCount}
-            lastThunder={lastThunder}
-            onLightningClick={() => mapRef.current?.flyToLightning()}
-          />
-          <ReactionBar onReact={handleReact} />
-        </div>
-      </BottomSheet>
+            {/* Tab content */}
+            {activeTab === "reactions" ? (
+              <>
+                <FeedPanel
+                  reactions={reactions}
+                  areaName={areaName}
+                  userLat={userLat}
+                  userLng={userLng}
+                  lightningCount={lightningCount}
+                  lastThunder={lastThunder}
+                  onLightningClick={() => mapRef.current?.flyToLightning()}
+                />
+                <ReactionBar onReact={handleReact} />
+              </>
+            ) : (
+              <ChatPanel
+                messages={chatMessages}
+                onSend={handleSendChat}
+                areaName={areaName}
+              />
+            )}
+          </div>
+        );
+
+        return (
+          <>
+            {/* Desktop */}
+            <div className="hidden md:flex flex-col h-full w-[380px] bg-[var(--panel)] border-l border-[var(--border)]">
+              {panelContent}
+            </div>
+
+            {/* Mobile */}
+            <BottomSheet>{panelContent}</BottomSheet>
+          </>
+        );
+      })()}
     </div>
   );
 }

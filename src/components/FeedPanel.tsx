@@ -56,7 +56,7 @@ export default function FeedPanel({
   const myUuid = typeof window !== "undefined" ? getDeviceUUID() : "";
 
   return (
-    <div className="w-full md:w-[380px] bg-[var(--panel)] md:border-l border-[var(--border)] flex flex-col h-full">
+    <div className="flex flex-col flex-1 overflow-hidden">
       {/* Header */}
       <div className="px-5 py-4 border-b border-[var(--border)]">
         <div className="flex items-center justify-between">

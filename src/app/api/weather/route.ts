@@ -15,6 +15,7 @@ const supabaseAdmin = createClient(
 // 서버 메모리 캐시 — 마지막 폴링 시간
 let lastPollTime = 0;
 let lastPollResult = { count: 0, queryTime: "" };
+let lastQueryTime = ""; // 마지막으로 조회한 기상청 dateTime
 
 function formatDateTimeKMA(date: Date): string {
   const y = date.getFullYear();
@@ -65,6 +66,19 @@ export async function GET() {
     }
 
     const lightnings = Array.isArray(items) ? items : [items];
+
+    // 같은 시간대 데이터면 중복 insert 방지
+    if (dateTime === lastQueryTime) {
+      lastPollTime = now;
+      return NextResponse.json({ ...lastPollResult, cached: true });
+    }
+    lastQueryTime = dateTime;
+
+    // 5분 이상 된 데이터 정리
+    await supabaseAdmin
+      .from("weather_events")
+      .delete()
+      .lt("created_at", new Date(now - 5 * 60 * 1000).toISOString());
 
     const events = lightnings.map(
       (l: { wgs84Lat: number; wgs84Lon: number }) => ({
