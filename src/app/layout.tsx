@@ -15,6 +15,19 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Hear That? ⚡",
   description: "천둥이 치면 같은 동네 사람들의 반응을 실시간으로 본다",
+  manifest: "/manifest.json",
+  themeColor: "#0a0a1a",
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "HearThat",
+  },
 };
 
 export default function RootLayout({

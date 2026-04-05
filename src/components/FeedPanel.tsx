@@ -45,7 +45,7 @@ function distanceLabel(
 
 export default function FeedPanel({ reactions, areaName, userLat, userLng }: FeedPanelProps) {
   return (
-    <div className="w-[380px] bg-[var(--panel)] border-l border-[var(--border)] flex flex-col h-full">
+    <div className="w-full md:w-[380px] bg-[var(--panel)] md:border-l border-[var(--border)] flex flex-col h-full">
       {/* Header */}
       <div className="px-5 py-4 border-b border-[var(--border)] flex items-center justify-between">
         <h2 className="text-base font-semibold">실시간 반응</h2>
