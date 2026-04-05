@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
 import MapOverlay from "@/components/MapOverlay";
 import MapStats from "@/components/MapStats";
@@ -113,6 +113,31 @@ export default function Home() {
       : 0;
 
   const isLive = lightningCount > 0 || reactions.length > 0;
+
+  // 3분마다 기상청 API 폴링
+  useEffect(() => {
+    const poll = () => {
+      fetch("/api/weather")
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.count > 0) {
+            // 새 데이터 로드
+            fetchAllRecentLightning().then((all) => {
+              setLightningCount(all.length);
+              const fiveMinAgo = Date.now() - 5 * 60 * 1000;
+              all
+                .filter((e) => new Date(e.created_at).getTime() > fiveMinAgo)
+                .forEach((e) => mapRef.current?.addLightningMarker(e));
+            });
+          }
+        })
+        .catch(() => {});
+    };
+
+    poll(); // 첫 로드 시 즉시 실행
+    const interval = setInterval(poll, 60 * 1000); // 1분
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="flex h-screen">
