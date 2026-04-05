@@ -37,59 +37,88 @@ export default function Home() {
   const [lightningCount, setLightningCount] = useState(0);
   const mapRef = useRef<MapHandle>(null);
 
-  const handleLocationReady = useCallback((lat: number, lng: number) => {
-    setUserLat(lat);
-    setUserLng(lng);
+  // 구독 중복 방지
+  const unsubRef = useRef<(() => void) | null>(null);
+  const initialized = useRef(false);
 
-    getAreaName(lat, lng).then(setAreaName);
+  // 피드 중복 방지
+  const seenReactionIds = useRef<Set<string>>(new Set());
 
-    const h3Index = getH3Index(lat, lng);
-    const neighbors = getH3Neighbors(h3Index);
+  const addReaction = useCallback((r: Reaction) => {
+    if (seenReactionIds.current.has(r.id)) return;
+    seenReactionIds.current.add(r.id);
+    setReactions((prev) => [r, ...prev].slice(0, 200));
+    mapRef.current?.addReactionMarker(r);
+  }, []);
 
-    fetchRecentReactions(neighbors).then((existing) => {
-      setReactions(existing);
-      // 마커는 최근 5분 이내만
-      const fiveMinAgo = Date.now() - 5 * 60 * 1000;
-      existing
-        .filter((r) => new Date(r.created_at).getTime() > fiveMinAgo)
-        .forEach((r) => mapRef.current?.addReactionMarker(r));
-    });
+  const handleLocationReady = useCallback(
+    (lat: number, lng: number) => {
+      // 중복 초기화 방지
+      if (initialized.current) return;
+      initialized.current = true;
 
-    const unsubReactions = subscribeToReactions(neighbors, (newReaction) => {
-      setReactions((prev) => [newReaction, ...prev].slice(0, 200));
-      mapRef.current?.addReactionMarker(newReaction);
-    });
+      setUserLat(lat);
+      setUserLng(lng);
 
-    // 전국 번개 지도에 표시 (최근 5분만 마커)
-    fetchAllRecentLightning().then((all) => {
-      setLightningCount(all.length);
-      const fiveMinAgo = Date.now() - 5 * 60 * 1000;
-      all
-        .filter((e) => new Date(e.created_at).getTime() > fiveMinAgo)
-        .forEach((e) => mapRef.current?.addLightningMarker(e));
-    });
+      getAreaName(lat, lng).then(setAreaName);
 
-    // 내 지역 weather events (피드/통계용)
-    fetchRecentWeatherEvents(neighbors).then((events) => {
-      setWeatherEvents(events);
-      if (events.length > 0) {
-        const ago = Math.floor(
-          (Date.now() - new Date(events[0].created_at).getTime()) / 60000
-        );
-        setLastThunder(ago < 1 ? "방금" : `${ago}분 전`);
-      }
-    });
+      const h3Index = getH3Index(lat, lng);
+      const neighbors = getH3Neighbors(h3Index);
 
-    const unsubWeather = subscribeToWeatherEvents(neighbors, (event) => {
-      setWeatherEvents((prev) => [event, ...prev].slice(0, 50));
-      setLightningCount((prev) => prev + 1);
-      setLastThunder("방금");
-      mapRef.current?.addLightningMarker(event);
-    });
+      // 기존 구독 정리
+      unsubRef.current?.();
 
+      fetchRecentReactions(neighbors).then((existing) => {
+        const fiveMinAgo = Date.now() - 5 * 60 * 1000;
+        existing.forEach((r) => {
+          if (seenReactionIds.current.has(r.id)) return;
+          seenReactionIds.current.add(r.id);
+          if (new Date(r.created_at).getTime() > fiveMinAgo) {
+            mapRef.current?.addReactionMarker(r);
+          }
+        });
+        setReactions(existing);
+      });
+
+      const unsubReactions = subscribeToReactions(neighbors, addReaction);
+
+      fetchAllRecentLightning().then((all) => {
+        setLightningCount(all.length);
+        const fiveMinAgo = Date.now() - 5 * 60 * 1000;
+        all
+          .filter((e) => new Date(e.created_at).getTime() > fiveMinAgo)
+          .forEach((e) => mapRef.current?.addLightningMarker(e));
+      });
+
+      fetchRecentWeatherEvents(neighbors).then((events) => {
+        setWeatherEvents(events);
+        if (events.length > 0) {
+          const ago = Math.floor(
+            (Date.now() - new Date(events[0].created_at).getTime()) / 60000
+          );
+          setLastThunder(ago < 1 ? "방금" : `${ago}분 전`);
+        }
+      });
+
+      const unsubWeather = subscribeToWeatherEvents(neighbors, (event) => {
+        setWeatherEvents((prev) => [event, ...prev].slice(0, 50));
+        setLightningCount((prev) => prev + 1);
+        setLastThunder("방금");
+        mapRef.current?.addLightningMarker(event);
+      });
+
+      unsubRef.current = () => {
+        unsubReactions();
+        unsubWeather();
+      };
+    },
+    [addReaction]
+  );
+
+  // 컴포넌트 언마운트 시 구독 정리
+  useEffect(() => {
     return () => {
-      unsubReactions();
-      unsubWeather();
+      unsubRef.current?.();
     };
   }, []);
 
@@ -114,14 +143,13 @@ export default function Home() {
 
   const isLive = lightningCount > 0 || reactions.length > 0;
 
-  // 3분마다 기상청 API 폴링
+  // 1분마다 기상청 API 폴링
   useEffect(() => {
     const poll = () => {
       fetch("/api/weather")
         .then((r) => r.json())
         .then((data) => {
           if (data.count > 0) {
-            // 새 데이터 로드
             fetchAllRecentLightning().then((all) => {
               setLightningCount(all.length);
               const fiveMinAgo = Date.now() - 5 * 60 * 1000;
@@ -134,8 +162,8 @@ export default function Home() {
         .catch(() => {});
     };
 
-    poll(); // 첫 로드 시 즉시 실행
-    const interval = setInterval(poll, 60 * 1000); // 1분
+    poll();
+    const interval = setInterval(poll, 60 * 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -186,6 +214,7 @@ export default function Home() {
             userLng={userLng}
             lightningCount={lightningCount}
             lastThunder={lastThunder}
+            onLightningClick={() => mapRef.current?.flyToLightning()}
           />
           <ReactionBar onReact={handleReact} />
         </div>
