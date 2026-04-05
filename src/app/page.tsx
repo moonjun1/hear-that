@@ -13,7 +13,11 @@ import {
 } from "@/lib/reactions";
 import { getH3Index, getH3Neighbors, haversineDistance } from "@/lib/geo";
 import { getAreaName } from "@/lib/location";
-import type { Reaction } from "@/types";
+import {
+  subscribeToWeatherEvents,
+  fetchRecentWeatherEvents,
+} from "@/lib/weather";
+import type { Reaction, WeatherEvent } from "@/types";
 import type { MapHandle } from "@/components/Map";
 
 const Map = dynamic(() => import("@/components/Map"), { ssr: false });
@@ -23,6 +27,8 @@ export default function Home() {
   const [userLat, setUserLat] = useState<number | null>(null);
   const [userLng, setUserLng] = useState<number | null>(null);
   const [areaName, setAreaName] = useState("내 주변");
+  const [lastThunder, setLastThunder] = useState<string | null>(null);
+  const [weatherEvents, setWeatherEvents] = useState<WeatherEvent[]>([]);
   const mapRef = useRef<MapHandle>(null);
 
   const handleLocationReady = useCallback(
@@ -42,13 +48,33 @@ export default function Home() {
         existing.forEach((r) => mapRef.current?.addReactionMarker(r));
       });
 
-      // 실시간 구독
-      const unsubscribe = subscribeToReactions(neighbors, (newReaction) => {
+      // 실시간 반응 구독
+      const unsubReactions = subscribeToReactions(neighbors, (newReaction) => {
         setReactions((prev) => [newReaction, ...prev].slice(0, 200));
         mapRef.current?.addReactionMarker(newReaction);
       });
 
-      return () => unsubscribe();
+      // 최근 날씨 이벤트 로드
+      fetchRecentWeatherEvents(neighbors).then((events) => {
+        setWeatherEvents(events);
+        if (events.length > 0) {
+          const ago = Math.floor(
+            (Date.now() - new Date(events[0].created_at).getTime()) / 60000
+          );
+          setLastThunder(ago < 1 ? "방금" : `${ago}분 전`);
+        }
+      });
+
+      // 실시간 날씨 이벤트 구독
+      const unsubWeather = subscribeToWeatherEvents(neighbors, (event) => {
+        setWeatherEvents((prev) => [event, ...prev].slice(0, 50));
+        setLastThunder("방금");
+      });
+
+      return () => {
+        unsubReactions();
+        unsubWeather();
+      };
     },
     []
   );
@@ -84,7 +110,7 @@ export default function Home() {
         <MapStats
           reactionCount={reactions.length}
           radius={radius}
-          lastThunder={null}
+          lastThunder={lastThunder}
         />
       </div>
 
