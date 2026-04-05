@@ -85,26 +85,28 @@ export function subscribeToWeatherEvents(
   h3Indexes: string[],
   onNewEvent: (event: WeatherEvent) => void
 ) {
-  const channels = h3Indexes.map((h3Index) =>
-    supabase
-      .channel(`weather-${h3Index}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "weather_events",
-          filter: `h3_index=eq.${h3Index}`,
-        },
-        (payload) => {
-          onNewEvent(payload.new as WeatherEvent);
+  const h3Set = new Set(h3Indexes);
+
+  const channel = supabase
+    .channel("weather-realtime")
+    .on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "weather_events",
+      },
+      (payload) => {
+        const event = payload.new as WeatherEvent;
+        if (h3Set.has(event.h3_index)) {
+          onNewEvent(event);
         }
-      )
-      .subscribe()
-  );
+      }
+    )
+    .subscribe();
 
   return () => {
-    channels.forEach((ch) => supabase.removeChannel(ch));
+    supabase.removeChannel(channel);
   };
 }
 

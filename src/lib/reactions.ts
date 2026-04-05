@@ -50,26 +50,31 @@ export function subscribeToReactions(
   h3Indexes: string[],
   onNewReaction: (reaction: Reaction) => void
 ) {
-  const channels = h3Indexes.map((h3Index) =>
-    supabase
-      .channel(`reactions-${h3Index}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "reactions",
-          filter: `h3_index=eq.${h3Index}`,
-        },
-        (payload) => {
-          onNewReaction(payload.new as Reaction);
+  // 단일 채널로 전체 reactions INSERT 구독, 클라이언트에서 h3 필터링
+  const h3Set = new Set(h3Indexes);
+
+  const channel = supabase
+    .channel("reactions-realtime")
+    .on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "reactions",
+      },
+      (payload) => {
+        const reaction = payload.new as Reaction;
+        if (h3Set.has(reaction.h3_index)) {
+          onNewReaction(reaction);
         }
-      )
-      .subscribe()
-  );
+      }
+    )
+    .subscribe((status) => {
+      console.log("Realtime subscription status:", status);
+    });
 
   return () => {
-    channels.forEach((ch) => supabase.removeChannel(ch));
+    supabase.removeChannel(channel);
   };
 }
 
