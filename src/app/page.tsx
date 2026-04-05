@@ -60,10 +60,13 @@ export default function Home() {
       mapRef.current?.addReactionMarker(newReaction);
     });
 
-    // 전국 번개 지도에 표시
+    // 전국 번개 지도에 표시 (최근 5분만 마커)
     fetchAllRecentLightning().then((all) => {
       setLightningCount(all.length);
-      all.forEach((e) => mapRef.current?.addLightningMarker(e));
+      const fiveMinAgo = Date.now() - 5 * 60 * 1000;
+      all
+        .filter((e) => new Date(e.created_at).getTime() > fiveMinAgo)
+        .forEach((e) => mapRef.current?.addLightningMarker(e));
     });
 
     // 내 지역 weather events (피드/통계용)
