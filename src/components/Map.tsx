@@ -133,11 +133,49 @@ const Map = forwardRef<MapHandle, MapProps>(({ onLocationReady }, ref) => {
       const el = document.createElement("div");
       el.textContent = "⚡";
       el.style.cssText =
-        "font-size:36px;filter:drop-shadow(0 0 12px rgba(255,200,50,0.8));animation:markerPop 0.3s ease-out;pointer-events:none;";
+        "font-size:36px;filter:drop-shadow(0 0 12px rgba(255,200,50,0.8));animation:markerPop 0.3s ease-out;cursor:pointer;";
 
       const marker = new mapboxgl.Marker({ element: el })
         .setLngLat([event.lng, event.lat])
         .addTo(map.current);
+
+      // 시간 계산
+      const ago = Math.floor(
+        (Date.now() - new Date(event.created_at).getTime()) / 60000
+      );
+      const timeText = ago < 1 ? "방금" : `${ago}분 전`;
+
+      // 역지오코딩으로 지역명 팝업
+      const popup = new mapboxgl.Popup({
+        offset: 25,
+        closeButton: false,
+        className: "lightning-popup",
+      }).setHTML(
+        `<div style="background:#1a1a3a;color:#e0e0e0;padding:8px 12px;border-radius:8px;font-size:13px;min-width:120px;">
+          <div style="font-size:18px;margin-bottom:4px;">⚡ 낙뢰 감지</div>
+          <div style="color:#888;font-size:11px;">${timeText}</div>
+          <div id="lightning-loc-${event.id}" style="color:#ffc832;margin-top:4px;font-size:12px;">위치 확인 중...</div>
+        </div>`
+      );
+      marker.setPopup(popup);
+
+      // 클릭 시 역지오코딩
+      el.addEventListener("click", () => {
+        const locEl = document.getElementById(`lightning-loc-${event.id}`);
+        if (locEl && locEl.textContent === "위치 확인 중...") {
+          fetch(
+            `https://api.mapbox.com/geocoding/v5/mapbox.places/${event.lng},${event.lat}.json?types=locality,place,district&language=ko&access_token=${MAPBOX_TOKEN}`
+          )
+            .then((r) => r.json())
+            .then((data) => {
+              const name = data.features?.[0]?.place_name || `${event.lat.toFixed(2)}°N ${event.lng.toFixed(2)}°E`;
+              if (locEl) locEl.textContent = name;
+            })
+            .catch(() => {
+              if (locEl) locEl.textContent = `${event.lat.toFixed(2)}°N ${event.lng.toFixed(2)}°E`;
+            });
+        }
+      });
 
       // 3분 후 제거
       setTimeout(() => {

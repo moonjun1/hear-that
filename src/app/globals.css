@@ -29,3 +29,13 @@ body {
 .mapboxgl-canvas {
   outline: none;
 }
+
+.lightning-popup .mapboxgl-popup-content {
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
+}
+
+.lightning-popup .mapboxgl-popup-tip {
+  border-top-color: #1a1a3a;
+}
