@@ -3,7 +3,7 @@
 import { useEffect, useRef, useImperativeHandle, forwardRef } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import type { Reaction } from "@/types";
+import type { Reaction, WeatherEvent } from "@/types";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 const DEFAULT_CENTER: [number, number] = [126.978, 37.5665];
@@ -15,6 +15,7 @@ const UNCLUSTERED_LAYER = "unclustered-point";
 
 export interface MapHandle {
   addReactionMarker: (reaction: Reaction) => void;
+  addLightningMarker: (event: WeatherEvent) => void;
   getMap: () => mapboxgl.Map | null;
 }
 
@@ -118,6 +119,25 @@ const Map = forwardRef<MapHandle, MapProps>(({ onLocationReady }, ref) => {
         updateSource();
       }, 300_000);
     },
+    addLightningMarker(event: WeatherEvent) {
+      if (!map.current) return;
+
+      const el = document.createElement("div");
+      el.textContent = "⚡";
+      el.style.cssText =
+        "font-size:36px;filter:drop-shadow(0 0 12px rgba(255,200,50,0.8));animation:markerPop 0.3s ease-out;pointer-events:none;";
+
+      const marker = new mapboxgl.Marker({ element: el })
+        .setLngLat([event.lng, event.lat])
+        .addTo(map.current);
+
+      // 3분 후 제거
+      setTimeout(() => {
+        el.style.transition = "opacity 2s";
+        el.style.opacity = "0";
+        setTimeout(() => marker.remove(), 2000);
+      }, 180_000);
+    },
     getMap: () => map.current,
   }));
 
@@ -154,6 +174,9 @@ const Map = forwardRef<MapHandle, MapProps>(({ onLocationReady }, ref) => {
       });
 
       map.current.on("load", () => {
+        // 중복 방지
+        if (map.current!.getSource(SOURCE_ID)) return;
+
         // 클러스터링 GeoJSON source
         map.current!.addSource(SOURCE_ID, {
           type: "geojson",

@@ -87,8 +87,9 @@ export function subscribeToWeatherEvents(
 ) {
   const h3Set = new Set(h3Indexes);
 
+  const channelName = `weather-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const channel = supabase
-    .channel("weather-realtime")
+    .channel(channelName)
     .on(
       "postgres_changes",
       {
@@ -108,6 +109,25 @@ export function subscribeToWeatherEvents(
   return () => {
     supabase.removeChannel(channel);
   };
+}
+
+// 전국 번개 (지도 표시용)
+export async function fetchAllRecentLightning(
+  minutesAgo = 30
+): Promise<WeatherEvent[]> {
+  const since = new Date(
+    Date.now() - minutesAgo * 60 * 1000
+  ).toISOString();
+
+  const { data, error } = await supabase
+    .from("weather_events")
+    .select("*")
+    .gte("created_at", since)
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  if (error) return [];
+  return data as WeatherEvent[];
 }
 
 export async function fetchRecentWeatherEvents(

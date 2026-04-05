@@ -53,8 +53,10 @@ export function subscribeToReactions(
   // 단일 채널로 전체 reactions INSERT 구독, 클라이언트에서 h3 필터링
   const h3Set = new Set(h3Indexes);
 
+  // 유니크 채널명으로 중복 구독 방지
+  const channelName = `reactions-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const channel = supabase
-    .channel("reactions-realtime")
+    .channel(channelName)
     .on(
       "postgres_changes",
       {

@@ -17,6 +17,7 @@ import { getAreaName } from "@/lib/location";
 import {
   subscribeToWeatherEvents,
   fetchRecentWeatherEvents,
+  fetchAllRecentLightning,
 } from "@/lib/weather";
 import type { Reaction, WeatherEvent } from "@/types";
 import type { MapHandle } from "@/components/Map";
@@ -54,6 +55,12 @@ export default function Home() {
       mapRef.current?.addReactionMarker(newReaction);
     });
 
+    // 전국 번개 지도에 표시
+    fetchAllRecentLightning().then((all) => {
+      all.forEach((e) => mapRef.current?.addLightningMarker(e));
+    });
+
+    // 내 지역 weather events (피드/통계용)
     fetchRecentWeatherEvents(neighbors).then((events) => {
       setWeatherEvents(events);
       if (events.length > 0) {
@@ -67,6 +74,7 @@ export default function Home() {
     const unsubWeather = subscribeToWeatherEvents(neighbors, (event) => {
       setWeatherEvents((prev) => [event, ...prev].slice(0, 50));
       setLastThunder("방금");
+      mapRef.current?.addLightningMarker(event);
     });
 
     return () => {
