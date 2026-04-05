@@ -5,6 +5,8 @@ import type { Reaction } from "@/types";
 interface FeedPanelProps {
   reactions: Reaction[];
   areaName: string;
+  userLat?: number | null;
+  userLng?: number | null;
 }
 
 function timeAgo(dateStr: string): string {
@@ -22,7 +24,26 @@ function anonName(uuid: string): string {
   return `익명 #${hash % 100}`;
 }
 
-export default function FeedPanel({ reactions, areaName }: FeedPanelProps) {
+function distanceLabel(
+  userLat: number | null | undefined,
+  userLng: number | null | undefined,
+  rLat: number,
+  rLng: number
+): string {
+  if (!userLat || !userLng) return "";
+  const R = 6371;
+  const dLat = ((rLat - userLat) * Math.PI) / 180;
+  const dLng = ((rLng - userLng) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((userLat * Math.PI) / 180) *
+      Math.cos((rLat * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+  const d = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return d < 1 ? `${Math.round(d * 1000)}m` : `${d.toFixed(1)}km`;
+}
+
+export default function FeedPanel({ reactions, areaName, userLat, userLng }: FeedPanelProps) {
   return (
     <div className="w-[380px] bg-[var(--panel)] border-l border-[var(--border)] flex flex-col h-full">
       {/* Header */}
@@ -55,6 +76,11 @@ export default function FeedPanel({ reactions, areaName }: FeedPanelProps) {
                 <p className="text-sm leading-relaxed">{r.text}</p>
               ) : (
                 <p className="text-3xl">{r.emoji}</p>
+              )}
+              {(userLat || userLng) && (
+                <div className="text-[11px] text-gray-600 mt-1">
+                  {distanceLabel(userLat, userLng, r.lat, r.lng)}
+                </div>
               )}
             </div>
           ))

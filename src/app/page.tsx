@@ -12,6 +12,7 @@ import {
   fetchRecentReactions,
 } from "@/lib/reactions";
 import { getH3Index, getH3Neighbors, haversineDistance } from "@/lib/geo";
+import { getAreaName } from "@/lib/location";
 import type { Reaction } from "@/types";
 import type { MapHandle } from "@/components/Map";
 
@@ -21,12 +22,16 @@ export default function Home() {
   const [reactions, setReactions] = useState<Reaction[]>([]);
   const [userLat, setUserLat] = useState<number | null>(null);
   const [userLng, setUserLng] = useState<number | null>(null);
+  const [areaName, setAreaName] = useState("내 주변");
   const mapRef = useRef<MapHandle>(null);
 
   const handleLocationReady = useCallback(
     (lat: number, lng: number) => {
       setUserLat(lat);
       setUserLng(lng);
+
+      // 지역명 가져오기
+      getAreaName(lat, lng).then(setAreaName);
 
       const h3Index = getH3Index(lat, lng);
       const neighbors = getH3Neighbors(h3Index);
@@ -85,7 +90,7 @@ export default function Home() {
 
       {/* Feed panel */}
       <div className="flex flex-col h-full">
-        <FeedPanel reactions={reactions} areaName="내 주변" />
+        <FeedPanel reactions={reactions} areaName={areaName} userLat={userLat} userLng={userLng} />
         <ReactionBar
           onReact={handleReact}
           disabled={!userLat || !userLng}
