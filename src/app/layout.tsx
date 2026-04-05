@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Analytics from "@/components/Analytics";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -15,6 +16,9 @@ const geistMono = Geist_Mono({
 const SITE_URL = "https://hear-that.vercel.app";
 
 export const metadata: Metadata = {
+  verification: {
+    google: "kZJvHav5iCvuX2V3k93Q-_40VuOEC-TK52Uj3WQyEJo",
+  },
   title: {
     default: "Hear That? ⚡ 천둥 실시간 반응",
     template: "%s | Hear That?",
@@ -114,6 +118,7 @@ export default function RootLayout({
             }),
           }}
         />
+        <Analytics />
         {children}
       </body>
     </html>
