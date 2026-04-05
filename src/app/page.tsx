@@ -7,6 +7,7 @@ import MapStats from "@/components/MapStats";
 import FeedPanel from "@/components/FeedPanel";
 import ReactionBar from "@/components/ReactionBar";
 import BottomSheet from "@/components/BottomSheet";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import ToastContainer, { showToast } from "@/components/Toast";
 import ChatPanel from "@/components/ChatPanel";
 import {
@@ -213,7 +214,9 @@ export default function Home() {
 
       {/* Map area */}
       <div className="flex-1 relative">
-        <Map ref={mapRef} onLocationReady={handleLocationReady} />
+        <ErrorBoundary>
+          <Map ref={mapRef} onLocationReady={handleLocationReady} />
+        </ErrorBoundary>
 
         {/* 내 위치로 돌아가기 */}
         {userLat && userLng && (
@@ -223,6 +226,13 @@ export default function Home() {
           >
             📍 내 위치
           </button>
+        )}
+
+        {/* 위치 fallback 안내 */}
+        {userLat === 37.5665 && userLng === 126.978 && (
+          <div className="absolute top-20 right-5 z-10 bg-black/60 backdrop-blur-md px-3 py-2 rounded-lg text-xs text-gray-400 max-w-[200px]">
+            📍 위치를 가져올 수 없어 서울 기준으로 표시 중
+          </div>
         )}
         <ThunderWave
           getMap={() => mapRef.current?.getMap() ?? null}
