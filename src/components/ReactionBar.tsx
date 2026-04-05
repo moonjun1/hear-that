@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 
 const EMOJIS = ["⚡", "😱", "🙉", "😂", "🌧️"];
+const COOLDOWN_SEC = 10;
 
 interface ReactionBarProps {
   onReact: (emoji: string, text?: string) => void;
@@ -11,16 +12,37 @@ interface ReactionBarProps {
 
 export default function ReactionBar({ onReact, disabled }: ReactionBarProps) {
   const [text, setText] = useState("");
-  const [cooldown, setCooldown] = useState(false);
+  const [remaining, setRemaining] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const cooldown = remaining > 0;
+
+  const startCooldown = useCallback(() => {
+    setRemaining(COOLDOWN_SEC);
+    timerRef.current = setInterval(() => {
+      setRemaining((prev) => {
+        if (prev <= 1) {
+          if (timerRef.current) clearInterval(timerRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
 
   const handleEmoji = useCallback(
     (emoji: string) => {
       if (cooldown || disabled) return;
       onReact(emoji);
-      setCooldown(true);
-      setTimeout(() => setCooldown(false), 10000);
+      startCooldown();
     },
-    [cooldown, disabled, onReact]
+    [cooldown, disabled, onReact, startCooldown]
   );
 
   const handleSubmit = useCallback(
@@ -29,10 +51,9 @@ export default function ReactionBar({ onReact, disabled }: ReactionBarProps) {
       if (!text.trim() || cooldown || disabled) return;
       onReact("💬", text.trim());
       setText("");
-      setCooldown(true);
-      setTimeout(() => setCooldown(false), 10000);
+      startCooldown();
     },
-    [text, cooldown, disabled, onReact]
+    [text, cooldown, disabled, onReact, startCooldown]
   );
 
   return (
@@ -57,7 +78,7 @@ export default function ReactionBar({ onReact, disabled }: ReactionBarProps) {
           type="text"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder={cooldown ? "10초 후 다시 반응 가능" : "반응을 남겨보세요..."}
+          placeholder={cooldown ? `${remaining}초 후 다시 반응 가능` : "반응을 남겨보세요..."}
           maxLength={200}
           disabled={cooldown || disabled}
           className="flex-1 bg-[#1a1a3a] border border-[var(--border)] rounded-full px-4 py-2.5 text-sm outline-none focus:border-[var(--accent)] disabled:opacity-40 placeholder:text-gray-600"
@@ -67,7 +88,7 @@ export default function ReactionBar({ onReact, disabled }: ReactionBarProps) {
           disabled={!text.trim() || cooldown || disabled}
           className="bg-[var(--accent)] text-[#0a0a1a] rounded-full px-5 py-2.5 font-semibold text-sm disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          전송
+          {cooldown ? `${remaining}s` : "전송"}
         </button>
       </form>
     </div>
