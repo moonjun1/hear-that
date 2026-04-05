@@ -80,7 +80,17 @@ export async function GET() {
       .delete()
       .lt("created_at", new Date(now - 5 * 60 * 1000).toISOString());
 
-    const events = lightnings.map(
+    // 한국 육지만 필터 (바다 번개 제외)
+    // 대략 위도 33.0~38.6, 경도 125.0~131.9
+    const onLand = lightnings.filter(
+      (l: { wgs84Lat: number; wgs84Lon: number }) =>
+        l.wgs84Lat >= 33.0 &&
+        l.wgs84Lat <= 38.6 &&
+        l.wgs84Lon >= 125.0 &&
+        l.wgs84Lon <= 131.9
+    );
+
+    const events = onLand.map(
       (l: { wgs84Lat: number; wgs84Lon: number }) => ({
         lat: l.wgs84Lat,
         lng: l.wgs84Lon,

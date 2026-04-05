@@ -193,9 +193,24 @@ export default function Home() {
   const handleSendChat = useCallback(
     async (text: string) => {
       if (!userH3) return;
+
+      // 낙관적 업데이트: 보내자마자 화면에 표시
+      const optimistic: ChatMessage = {
+        id: `optimistic-${Date.now()}`,
+        text,
+        h3_index: userH3,
+        device_uuid: typeof window !== "undefined"
+          ? localStorage.getItem("hear-that-device-uuid") || ""
+          : "",
+        created_at: new Date().toISOString(),
+      };
+      setChatMessages((prev) => [...prev, optimistic]);
+
       const result = await sendChat(userH3, text);
       if (!result.success) {
         showToast(result.error || "전송 실패");
+        // 실패 시 낙관적 메시지 제거
+        setChatMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
       }
     },
     [userH3]
