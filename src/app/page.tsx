@@ -103,7 +103,7 @@ export default function Home() {
           weatherEvents={weatherEvents}
           reactions={reactions}
         />
-        <MapOverlay />
+        <MapOverlay areaName={areaName} reactionCount={reactions.length} />
         <MapStats
           reactionCount={reactions.length}
           radius={radius}
