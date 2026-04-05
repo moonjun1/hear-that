@@ -34,6 +34,7 @@ export default function Home() {
   const [areaName, setAreaName] = useState("내 주변");
   const [lastThunder, setLastThunder] = useState<string | null>(null);
   const [weatherEvents, setWeatherEvents] = useState<WeatherEvent[]>([]);
+  const [lightningCount, setLightningCount] = useState(0);
   const mapRef = useRef<MapHandle>(null);
 
   const handleLocationReady = useCallback((lat: number, lng: number) => {
@@ -57,6 +58,7 @@ export default function Home() {
 
     // 전국 번개 지도에 표시
     fetchAllRecentLightning().then((all) => {
+      setLightningCount(all.length);
       all.forEach((e) => mapRef.current?.addLightningMarker(e));
     });
 
@@ -73,6 +75,7 @@ export default function Home() {
 
     const unsubWeather = subscribeToWeatherEvents(neighbors, (event) => {
       setWeatherEvents((prev) => [event, ...prev].slice(0, 50));
+      setLightningCount((prev) => prev + 1);
       setLastThunder("방금");
       mapRef.current?.addLightningMarker(event);
     });
@@ -85,7 +88,7 @@ export default function Home() {
 
   const handleReact = useCallback(
     async (emoji: string, text?: string) => {
-      const lat = userLat ?? 37.5665; // 서울 fallback
+      const lat = userLat ?? 37.5665;
       const lng = userLng ?? 126.978;
       const result = await submitReaction(lat, lng, emoji, text);
       if (!result.success) console.error(result.error);
@@ -102,9 +105,11 @@ export default function Home() {
         )
       : 0;
 
+  const isLive = lightningCount > 0 || reactions.length > 0;
+
   return (
     <div className="flex h-screen">
-      {/* Map area — full width on mobile */}
+      {/* Map area */}
       <div className="flex-1 relative">
         <Map ref={mapRef} onLocationReady={handleLocationReady} />
         <ThunderWave
@@ -112,7 +117,12 @@ export default function Home() {
           weatherEvents={weatherEvents}
           reactions={reactions}
         />
-        <MapOverlay areaName={areaName} reactionCount={reactions.length} />
+        <MapOverlay
+          areaName={areaName}
+          reactionCount={reactions.length}
+          lightningCount={lightningCount}
+          isLive={isLive}
+        />
         <MapStats
           reactionCount={reactions.length}
           radius={radius}
@@ -127,6 +137,8 @@ export default function Home() {
           areaName={areaName}
           userLat={userLat}
           userLng={userLng}
+          lightningCount={lightningCount}
+          lastThunder={lastThunder}
         />
         <ReactionBar onReact={handleReact} />
       </div>
@@ -139,6 +151,8 @@ export default function Home() {
             areaName={areaName}
             userLat={userLat}
             userLng={userLng}
+            lightningCount={lightningCount}
+            lastThunder={lastThunder}
           />
           <ReactionBar onReact={handleReact} />
         </div>
