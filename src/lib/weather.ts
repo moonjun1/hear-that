@@ -113,7 +113,7 @@ export function subscribeToWeatherEvents(
 
 // 전국 번개 (지도 표시용)
 export async function fetchAllRecentLightning(
-  minutesAgo = 30
+  minutesAgo = 5
 ): Promise<WeatherEvent[]> {
   const since = new Date(
     Date.now() - minutesAgo * 60 * 1000
@@ -132,7 +132,7 @@ export async function fetchAllRecentLightning(
 
 export async function fetchRecentWeatherEvents(
   h3Indexes: string[],
-  minutesAgo = 30
+  minutesAgo = 5
 ): Promise<WeatherEvent[]> {
   const since = new Date(
     Date.now() - minutesAgo * 60 * 1000

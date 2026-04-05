@@ -177,12 +177,12 @@ const Map = forwardRef<MapHandle, MapProps>(({ onLocationReady }, ref) => {
         }
       });
 
-      // 3분 후 제거
+      // 5분 후 제거
       setTimeout(() => {
         el.style.transition = "opacity 2s";
         el.style.opacity = "0";
         setTimeout(() => marker.remove(), 2000);
-      }, 180_000);
+      }, 300_000);
     },
     flyToLightning() {
       if (!map.current || !lastLightningPositions.current.length) return;
