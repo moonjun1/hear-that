@@ -3,6 +3,7 @@
 import type { Reaction, WeatherEvent } from "@/types";
 import { nicknameFromUuid } from "@/lib/nickname";
 import { getDeviceUUID } from "@/lib/device";
+import { haversineDistance } from "@/lib/geo";
 import EmojiStats from "./EmojiStats";
 
 interface FeedPanelProps {
@@ -32,15 +33,7 @@ function distanceLabel(
   rLng: number
 ): string {
   if (!userLat || !userLng) return "";
-  const R = 6371;
-  const dLat = ((rLat - userLat) * Math.PI) / 180;
-  const dLng = ((rLng - userLng) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((userLat * Math.PI) / 180) *
-      Math.cos((rLat * Math.PI) / 180) *
-      Math.sin(dLng / 2) ** 2;
-  const d = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const d = haversineDistance(userLat, userLng, rLat, rLng);
   return d < 1 ? `${Math.round(d * 1000)}m` : `${d.toFixed(1)}km`;
 }
 
@@ -56,7 +49,7 @@ export default function FeedPanel({
   const myUuid = typeof window !== "undefined" ? getDeviceUUID() : "";
 
   return (
-    <div className="w-full md:w-[380px] bg-[var(--panel)] md:border-l border-[var(--border)] flex flex-col h-full">
+    <div className="flex flex-col flex-1 overflow-hidden">
       {/* Header */}
       <div className="px-5 py-4 border-b border-[var(--border)]">
         <div className="flex items-center justify-between">
@@ -136,7 +129,10 @@ export default function FeedPanel({
                   </span>
                 </div>
                 {r.text ? (
-                  <p className="text-sm leading-relaxed">{r.text}</p>
+                  <p className="text-sm leading-relaxed">
+                    {r.emoji !== "💬" && <span className="mr-1">{r.emoji}</span>}
+                    {r.text}
+                  </p>
                 ) : (
                   <p className="text-3xl">{r.emoji}</p>
                 )}

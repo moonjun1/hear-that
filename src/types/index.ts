@@ -18,3 +18,11 @@ export interface WeatherEvent {
   created_at: string;
   h3_index: string;
 }
+
+export interface ChatMessage {
+  id: string;
+  text: string;
+  h3_index: string;
+  device_uuid: string;
+  created_at: string;
+}

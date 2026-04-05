@@ -23,7 +23,7 @@ export async function submitReaction(
   text?: string
 ): Promise<{ success: boolean; error?: string }> {
   if (isOnCooldown()) {
-    return { success: false, error: "30초 후 다시 시도해주세요" };
+    return { success: false, error: "10초 후 다시 시도해주세요" };
   }
 
   const deviceUuid = getDeviceUUID();
@@ -71,9 +71,7 @@ export function subscribeToReactions(
         }
       }
     )
-    .subscribe((status) => {
-      console.log("Realtime subscription status:", status);
-    });
+    .subscribe();
 
   return () => {
     supabase.removeChannel(channel);

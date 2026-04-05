@@ -36,6 +36,7 @@ const Map = forwardRef<MapHandle, MapProps>(({ onLocationReady }, ref) => {
   const seenIds = useRef<Set<string>>(new Set());
   const emojiMarkers = useRef<Map<string, mapboxgl.Marker>>(new globalThis.Map());
   const lastLightningPositions = useRef<[number, number][]>([]);
+  const seenLightningIds = useRef<Set<string>>(new Set());
 
   function updateSource() {
     const source = map.current?.getSource(SOURCE_ID) as mapboxgl.GeoJSONSource | undefined;
@@ -123,6 +124,8 @@ const Map = forwardRef<MapHandle, MapProps>(({ onLocationReady }, ref) => {
     },
     addLightningMarker(event: WeatherEvent) {
       if (!map.current) return;
+      if (seenLightningIds.current.has(event.id)) return;
+      seenLightningIds.current.add(event.id);
 
       lastLightningPositions.current.push([event.lng, event.lat]);
       // 최근 50개만 유지
@@ -181,7 +184,10 @@ const Map = forwardRef<MapHandle, MapProps>(({ onLocationReady }, ref) => {
       setTimeout(() => {
         el.style.transition = "opacity 2s";
         el.style.opacity = "0";
-        setTimeout(() => marker.remove(), 2000);
+        setTimeout(() => {
+          marker.remove();
+          seenLightningIds.current.delete(event.id);
+        }, 2000);
       }, 300_000);
     },
     flyToLightning() {

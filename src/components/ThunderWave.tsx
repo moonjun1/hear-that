@@ -85,11 +85,13 @@ export default function ThunderWave({
 
     const resizeCanvas = () => {
       const container = map.getContainer();
-      canvas.width = container.clientWidth * window.devicePixelRatio;
-      canvas.height = container.clientHeight * window.devicePixelRatio;
+      const dpr = window.devicePixelRatio;
+      canvas.width = container.clientWidth * dpr;
+      canvas.height = container.clientHeight * dpr;
       canvas.style.width = `${container.clientWidth}px`;
       canvas.style.height = `${container.clientHeight}px`;
-      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+      // reset transform then scale (prevents CTM accumulation)
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
 
     resizeCanvas();
