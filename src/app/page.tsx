@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
 import MapOverlay from "@/components/MapOverlay";
 import MapStats from "@/components/MapStats";
 import FeedPanel from "@/components/FeedPanel";
 import ReactionBar from "@/components/ReactionBar";
 import BottomSheet from "@/components/BottomSheet";
+import ToastContainer, { showToast } from "@/components/Toast";
+import EmojiStats from "@/components/EmojiStats";
 import {
   submitReaction,
   subscribeToReactions,
@@ -17,6 +19,7 @@ import { getAreaName } from "@/lib/location";
 import {
   subscribeToWeatherEvents,
   fetchRecentWeatherEvents,
+  fetchAllRecentLightning,
 } from "@/lib/weather";
 import type { Reaction, WeatherEvent } from "@/types";
 import type { MapHandle } from "@/components/Map";
@@ -33,53 +36,104 @@ export default function Home() {
   const [areaName, setAreaName] = useState("내 주변");
   const [lastThunder, setLastThunder] = useState<string | null>(null);
   const [weatherEvents, setWeatherEvents] = useState<WeatherEvent[]>([]);
+  const [lightningCount, setLightningCount] = useState(0);
   const mapRef = useRef<MapHandle>(null);
 
-  const handleLocationReady = useCallback((lat: number, lng: number) => {
-    setUserLat(lat);
-    setUserLng(lng);
+  // 구독 중복 방지
+  const unsubRef = useRef<(() => void) | null>(null);
+  const initialized = useRef(false);
 
-    getAreaName(lat, lng).then(setAreaName);
+  // 피드 중복 방지
+  const seenReactionIds = useRef<Set<string>>(new Set());
 
-    const h3Index = getH3Index(lat, lng);
-    const neighbors = getH3Neighbors(h3Index);
+  const addReaction = useCallback((r: Reaction) => {
+    if (seenReactionIds.current.has(r.id)) return;
+    seenReactionIds.current.add(r.id);
+    setReactions((prev) => [r, ...prev].slice(0, 200));
+    mapRef.current?.addReactionMarker(r);
+  }, []);
 
-    fetchRecentReactions(neighbors).then((existing) => {
-      setReactions(existing);
-      existing.forEach((r) => mapRef.current?.addReactionMarker(r));
-    });
+  const handleLocationReady = useCallback(
+    (lat: number, lng: number) => {
+      // 중복 초기화 방지
+      if (initialized.current) return;
+      initialized.current = true;
 
-    const unsubReactions = subscribeToReactions(neighbors, (newReaction) => {
-      setReactions((prev) => [newReaction, ...prev].slice(0, 200));
-      mapRef.current?.addReactionMarker(newReaction);
-    });
+      setUserLat(lat);
+      setUserLng(lng);
 
-    fetchRecentWeatherEvents(neighbors).then((events) => {
-      setWeatherEvents(events);
-      if (events.length > 0) {
-        const ago = Math.floor(
-          (Date.now() - new Date(events[0].created_at).getTime()) / 60000
-        );
-        setLastThunder(ago < 1 ? "방금" : `${ago}분 전`);
-      }
-    });
+      getAreaName(lat, lng).then(setAreaName);
 
-    const unsubWeather = subscribeToWeatherEvents(neighbors, (event) => {
-      setWeatherEvents((prev) => [event, ...prev].slice(0, 50));
-      setLastThunder("방금");
-    });
+      const h3Index = getH3Index(lat, lng);
+      const neighbors = getH3Neighbors(h3Index);
 
+      // 기존 구독 정리
+      unsubRef.current?.();
+
+      fetchRecentReactions(neighbors).then((existing) => {
+        const fiveMinAgo = Date.now() - 5 * 60 * 1000;
+        existing.forEach((r) => {
+          if (seenReactionIds.current.has(r.id)) return;
+          seenReactionIds.current.add(r.id);
+          if (new Date(r.created_at).getTime() > fiveMinAgo) {
+            mapRef.current?.addReactionMarker(r);
+          }
+        });
+        setReactions(existing);
+      });
+
+      const unsubReactions = subscribeToReactions(neighbors, addReaction);
+
+      fetchAllRecentLightning().then((all) => {
+        setLightningCount(all.length);
+        const fiveMinAgo = Date.now() - 5 * 60 * 1000;
+        all
+          .filter((e) => new Date(e.created_at).getTime() > fiveMinAgo)
+          .forEach((e) => mapRef.current?.addLightningMarker(e));
+      });
+
+      fetchRecentWeatherEvents(neighbors).then((events) => {
+        setWeatherEvents(events);
+        if (events.length > 0) {
+          const ago = Math.floor(
+            (Date.now() - new Date(events[0].created_at).getTime()) / 60000
+          );
+          setLastThunder(ago < 1 ? "방금" : `${ago}분 전`);
+        }
+      });
+
+      const unsubWeather = subscribeToWeatherEvents(neighbors, (event) => {
+        setWeatherEvents((prev) => [event, ...prev].slice(0, 50));
+        setLightningCount((prev) => prev + 1);
+        setLastThunder("방금");
+        mapRef.current?.addLightningMarker(event);
+      });
+
+      unsubRef.current = () => {
+        unsubReactions();
+        unsubWeather();
+      };
+    },
+    [addReaction]
+  );
+
+  // 컴포넌트 언마운트 시 구독 정리
+  useEffect(() => {
     return () => {
-      unsubReactions();
-      unsubWeather();
+      unsubRef.current?.();
     };
   }, []);
 
   const handleReact = useCallback(
     async (emoji: string, text?: string) => {
-      if (!userLat || !userLng) return;
-      const result = await submitReaction(userLat, userLng, emoji, text);
-      if (!result.success) console.error(result.error);
+      const lat = userLat ?? 37.5665;
+      const lng = userLng ?? 126.978;
+      const result = await submitReaction(lat, lng, emoji, text);
+      if (result.success) {
+        showToast("반응 등록!", emoji);
+      } else {
+        showToast(result.error || "오류 발생");
+      }
     },
     [userLat, userLng]
   );
@@ -93,17 +147,67 @@ export default function Home() {
         )
       : 0;
 
+  const isLive = lightningCount > 0 || reactions.length > 0;
+
+  // 1분마다 기상청 API 폴링
+  useEffect(() => {
+    const poll = () => {
+      fetch("/api/weather")
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.count > 0) {
+            fetchAllRecentLightning().then((all) => {
+              setLightningCount(all.length);
+              const fiveMinAgo = Date.now() - 5 * 60 * 1000;
+              all
+                .filter((e) => new Date(e.created_at).getTime() > fiveMinAgo)
+                .forEach((e) => mapRef.current?.addLightningMarker(e));
+            });
+          }
+        })
+        .catch(() => {});
+    };
+
+    poll();
+    const interval = setInterval(poll, 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const flyToMyLocation = useCallback(() => {
+    const m = mapRef.current?.getMap();
+    if (m && userLat && userLng) {
+      m.flyTo({ center: [userLng, userLat], zoom: 14, duration: 1000 });
+    }
+  }, [userLat, userLng]);
+
   return (
     <div className="flex h-screen">
-      {/* Map area — full width on mobile */}
+      <ToastContainer />
+
+      {/* Map area */}
       <div className="flex-1 relative">
         <Map ref={mapRef} onLocationReady={handleLocationReady} />
+
+        {/* 내 위치로 돌아가기 */}
+        {userLat && userLng && (
+          <button
+            onClick={flyToMyLocation}
+            className="absolute top-20 left-5 z-10 bg-black/60 backdrop-blur-md px-3 py-2 rounded-lg text-sm text-gray-300 hover:text-[var(--accent)] transition-colors"
+          >
+            📍 내 위치
+          </button>
+        )}
         <ThunderWave
           getMap={() => mapRef.current?.getMap() ?? null}
           weatherEvents={weatherEvents}
           reactions={reactions}
         />
-        <MapOverlay areaName={areaName} reactionCount={reactions.length} />
+        <MapOverlay
+          areaName={areaName}
+          reactionCount={reactions.length}
+          lightningCount={lightningCount}
+          isLive={isLive}
+        />
         <MapStats
           reactionCount={reactions.length}
           radius={radius}
@@ -118,8 +222,11 @@ export default function Home() {
           areaName={areaName}
           userLat={userLat}
           userLng={userLng}
+          lightningCount={lightningCount}
+          lastThunder={lastThunder}
+          onLightningClick={() => mapRef.current?.flyToLightning()}
         />
-        <ReactionBar onReact={handleReact} disabled={!userLat || !userLng} />
+        <ReactionBar onReact={handleReact} />
       </div>
 
       {/* Mobile: bottom sheet */}
@@ -130,8 +237,11 @@ export default function Home() {
             areaName={areaName}
             userLat={userLat}
             userLng={userLng}
+            lightningCount={lightningCount}
+            lastThunder={lastThunder}
+            onLightningClick={() => mapRef.current?.flyToLightning()}
           />
-          <ReactionBar onReact={handleReact} disabled={!userLat || !userLng} />
+          <ReactionBar onReact={handleReact} />
         </div>
       </BottomSheet>
     </div>

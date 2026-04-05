@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -16,18 +16,19 @@ export const metadata: Metadata = {
   title: "Hear That? ⚡",
   description: "천둥이 치면 같은 동네 사람들의 반응을 실시간으로 본다",
   manifest: "/manifest.json",
-  themeColor: "#0a0a1a",
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "HearThat",
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: "#0a0a1a",
 };
 
 export default function RootLayout({

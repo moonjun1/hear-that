@@ -85,32 +85,54 @@ export function subscribeToWeatherEvents(
   h3Indexes: string[],
   onNewEvent: (event: WeatherEvent) => void
 ) {
-  const channels = h3Indexes.map((h3Index) =>
-    supabase
-      .channel(`weather-${h3Index}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "weather_events",
-          filter: `h3_index=eq.${h3Index}`,
-        },
-        (payload) => {
-          onNewEvent(payload.new as WeatherEvent);
+  const h3Set = new Set(h3Indexes);
+
+  const channelName = `weather-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const channel = supabase
+    .channel(channelName)
+    .on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "weather_events",
+      },
+      (payload) => {
+        const event = payload.new as WeatherEvent;
+        if (h3Set.has(event.h3_index)) {
+          onNewEvent(event);
         }
-      )
-      .subscribe()
-  );
+      }
+    )
+    .subscribe();
 
   return () => {
-    channels.forEach((ch) => supabase.removeChannel(ch));
+    supabase.removeChannel(channel);
   };
+}
+
+// 전국 번개 (지도 표시용)
+export async function fetchAllRecentLightning(
+  minutesAgo = 5
+): Promise<WeatherEvent[]> {
+  const since = new Date(
+    Date.now() - minutesAgo * 60 * 1000
+  ).toISOString();
+
+  const { data, error } = await supabase
+    .from("weather_events")
+    .select("*")
+    .gte("created_at", since)
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  if (error) return [];
+  return data as WeatherEvent[];
 }
 
 export async function fetchRecentWeatherEvents(
   h3Indexes: string[],
-  minutesAgo = 30
+  minutesAgo = 5
 ): Promise<WeatherEvent[]> {
   const since = new Date(
     Date.now() - minutesAgo * 60 * 1000

@@ -4,7 +4,7 @@ import { getH3Index } from "./geo";
 import type { Reaction } from "@/types";
 
 const COOLDOWN_KEY = "hear-that-last-reaction";
-const COOLDOWN_MS = 30_000;
+const COOLDOWN_MS = 10_000; // 10초
 
 function isOnCooldown(): boolean {
   const last = localStorage.getItem(COOLDOWN_KEY);
@@ -50,26 +50,33 @@ export function subscribeToReactions(
   h3Indexes: string[],
   onNewReaction: (reaction: Reaction) => void
 ) {
-  const channels = h3Indexes.map((h3Index) =>
-    supabase
-      .channel(`reactions-${h3Index}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "reactions",
-          filter: `h3_index=eq.${h3Index}`,
-        },
-        (payload) => {
-          onNewReaction(payload.new as Reaction);
+  // 단일 채널로 전체 reactions INSERT 구독, 클라이언트에서 h3 필터링
+  const h3Set = new Set(h3Indexes);
+
+  // 유니크 채널명으로 중복 구독 방지
+  const channelName = `reactions-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const channel = supabase
+    .channel(channelName)
+    .on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "reactions",
+      },
+      (payload) => {
+        const reaction = payload.new as Reaction;
+        if (h3Set.has(reaction.h3_index)) {
+          onNewReaction(reaction);
         }
-      )
-      .subscribe()
-  );
+      }
+    )
+    .subscribe((status) => {
+      console.log("Realtime subscription status:", status);
+    });
 
   return () => {
-    channels.forEach((ch) => supabase.removeChannel(ch));
+    supabase.removeChannel(channel);
   };
 }
 
