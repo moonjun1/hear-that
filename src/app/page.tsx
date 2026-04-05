@@ -21,6 +21,7 @@ import type { Reaction, WeatherEvent } from "@/types";
 import type { MapHandle } from "@/components/Map";
 
 const Map = dynamic(() => import("@/components/Map"), { ssr: false });
+const ThunderWave = dynamic(() => import("@/components/ThunderWave"), { ssr: false });
 
 export default function Home() {
   const [reactions, setReactions] = useState<Reaction[]>([]);
@@ -106,6 +107,11 @@ export default function Home() {
       {/* Map area */}
       <div className="flex-1 relative">
         <Map ref={mapRef} onLocationReady={handleLocationReady} />
+        <ThunderWave
+          getMap={() => mapRef.current?.getMap() ?? null}
+          weatherEvents={weatherEvents}
+          reactions={reactions}
+        />
         <MapOverlay />
         <MapStats
           reactionCount={reactions.length}
