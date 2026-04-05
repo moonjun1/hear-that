@@ -5,12 +5,16 @@ import { latLngToCell } from "h3-js";
 const KMA_API_URL =
   "http://apis.data.go.kr/1360000/LgtInfoService/getLgt";
 const H3_RESOLUTION = 5;
+const POLL_INTERVAL_MS = 60_000; // 1분
 
-// service_role로 insert (RLS bypass)
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
+
+// 서버 메모리 캐시 — 마지막 폴링 시간
+let lastPollTime = 0;
+let lastPollResult = { count: 0, queryTime: "" };
 
 function formatDateTimeKMA(date: Date): string {
   const y = date.getFullYear();
@@ -22,13 +26,22 @@ function formatDateTimeKMA(date: Date): string {
 }
 
 export async function GET() {
+  const now = Date.now();
+
+  // 1분 이내 재호출이면 캐시 리턴 (기상청 API 보호)
+  if (now - lastPollTime < POLL_INTERVAL_MS) {
+    return NextResponse.json({
+      ...lastPollResult,
+      cached: true,
+    });
+  }
+
   const apiKey = process.env.KMA_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: "KMA_API_KEY not set" }, { status: 500 });
   }
 
-  // 10분 전 데이터 조회
-  const queryTime = new Date(Date.now() - 10 * 60 * 1000);
+  const queryTime = new Date(now - 10 * 60 * 1000);
   const dateTime = formatDateTimeKMA(queryTime);
 
   const params = new URLSearchParams({
@@ -46,12 +59,13 @@ export async function GET() {
 
     const items = data?.response?.body?.items?.item;
     if (!items) {
-      return NextResponse.json({ count: 0, message: "No lightning data" });
+      lastPollTime = now;
+      lastPollResult = { count: 0, queryTime: dateTime };
+      return NextResponse.json(lastPollResult);
     }
 
     const lightnings = Array.isArray(items) ? items : [items];
 
-    // DB에 저장
     const events = lightnings.map(
       (l: { wgs84Lat: number; wgs84Lon: number }) => ({
         lat: l.wgs84Lat,
@@ -67,20 +81,14 @@ export async function GET() {
       .insert(events);
 
     if (error) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({
-      count: events.length,
-      queryTime: dateTime,
-    });
+    lastPollTime = now;
+    lastPollResult = { count: events.length, queryTime: dateTime };
+
+    return NextResponse.json(lastPollResult);
   } catch (err) {
-    return NextResponse.json(
-      { error: String(err) },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: String(err) }, { status: 500 });
   }
 }
