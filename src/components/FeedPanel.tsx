@@ -45,7 +45,7 @@ export default function FeedPanel({
       <div className="px-5 py-4 border-b border-[var(--border)]">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-semibold">실시간 반응</h2>
-          <span className="text-sm text-gray-500">{areaName}</span>
+          <span className="text-sm text-[var(--text-secondary)]">{areaName}</span>
         </div>
 
         {/* 번개 활동 배너 */}
@@ -58,7 +58,7 @@ export default function FeedPanel({
             <span className="text-sm text-[var(--accent)] flex-1">
               전국에서 번개 {lightningCount}건 감지 · {lastThunder || "방금"}
             </span>
-            <span className="text-xs text-gray-500">보러가기 →</span>
+            <span className="text-xs text-[var(--text-secondary)]">보러가기 →</span>
           </button>
         )}
       </div>
@@ -72,22 +72,22 @@ export default function FeedPanel({
           <div className="flex flex-col items-center justify-center h-full text-center px-8 gap-4">
             {lightningCount > 0 ? (
               <>
-                <p className="text-4xl">⚡</p>
-                <p className="text-gray-400 text-sm">
+                <p className="text-2xl">⚡</p>
+                <p className="text-[var(--text-secondary)] text-sm">
                   지금 번개가 치고 있어요!<br />
                   아직 내 주변 반응은 없어요.
                 </p>
-                <p className="text-gray-600 text-xs">
+                <p className="text-[var(--text-tertiary)] text-xs">
                   첫 반응을 남겨보세요
                 </p>
               </>
             ) : (
               <>
-                <p className="text-4xl">🌙</p>
-                <p className="text-gray-400 text-sm">
+                <p className="text-2xl">🌙</p>
+                <p className="text-[var(--text-secondary)] text-sm">
                   지금은 조용한 밤이에요
                 </p>
-                <p className="text-gray-600 text-xs">
+                <p className="text-[var(--text-tertiary)] text-xs">
                   천둥이 치면 같은 동네 사람들의<br />
                   반응이 여기에 나타나요
                 </p>
@@ -106,7 +106,7 @@ export default function FeedPanel({
               >
                 <div className="flex justify-between mb-1">
                   <span className="text-sm font-medium flex items-center gap-1.5">
-                    <span className={isMe ? "text-[var(--accent)]" : "text-gray-400"}>
+                    <span className={isMe ? "text-[var(--accent)]" : "text-[var(--text-secondary)]"}>
                       {nicknameFromUuid(r.device_uuid)}
                     </span>
                     {isMe && (
@@ -115,7 +115,7 @@ export default function FeedPanel({
                       </span>
                     )}
                   </span>
-                  <span className="text-[11px] text-gray-600">
+                  <span className="text-[11px] text-[var(--text-tertiary)]">
                     {timeAgo(r.created_at)}
                   </span>
                 </div>
@@ -128,7 +128,7 @@ export default function FeedPanel({
                   <p className="text-3xl">{r.emoji}</p>
                 )}
                 {(userLat || userLng) && (
-                  <div className="text-[11px] text-gray-600 mt-1">
+                  <div className="text-[11px] text-[var(--text-tertiary)] mt-1">
                     {distanceLabel(userLat, userLng, r.lat, r.lng)}
                   </div>
                 )}

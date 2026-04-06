@@ -54,7 +54,7 @@ export default function BottomSheet({ children }: BottomSheetProps) {
         onTouchEnd={handleTouchEnd}
         onClick={handleTap}
       >
-        <div className="w-10 h-1 bg-gray-600 rounded-full" />
+        <div className="w-10 h-1 bg-[var(--text-tertiary)] rounded-full" />
       </div>
 
       {/* Content */}

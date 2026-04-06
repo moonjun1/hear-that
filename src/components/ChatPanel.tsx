@@ -38,8 +38,8 @@ export default function ChatPanel({ messages, onSend, areaName }: ChatPanelProps
     <div className="flex flex-col h-full">
       {/* Chat header */}
       <div className="px-5 py-3 border-b border-[var(--border)] flex items-center justify-between">
-        <span className="text-sm text-gray-400">💬 {areaName} 채팅</span>
-        <span className="text-xs text-gray-600">{messages.length}개 메시지</span>
+        <span className="text-sm text-[var(--text-secondary)]">💬 {areaName} 채팅</span>
+        <span className="text-xs text-[var(--text-tertiary)]">{messages.length}개 메시지</span>
       </div>
 
       {/* Messages */}
@@ -52,11 +52,11 @@ export default function ChatPanel({ messages, onSend, areaName }: ChatPanelProps
           if (visible.length === 0) {
             return (
               <div className="flex flex-col items-center justify-center h-full text-center gap-2">
-                <p className="text-3xl">💬</p>
-                <p className="text-gray-400 text-sm">
+                <p className="text-xl">💬</p>
+                <p className="text-[var(--text-secondary)] text-sm">
                   아직 채팅이 없어요
                 </p>
-                <p className="text-gray-600 text-xs">
+                <p className="text-[var(--text-tertiary)] text-xs">
                   같은 동네 사람들과 대화해보세요
                 </p>
               </div>
@@ -69,19 +69,19 @@ export default function ChatPanel({ messages, onSend, areaName }: ChatPanelProps
                 key={msg.id}
                 className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
               >
-                <span className={`text-xs mb-1 ${isMe ? "text-[var(--accent)]" : "text-gray-500"}`}>
+                <span className={`text-xs mb-1 ${isMe ? "text-[var(--accent)]" : "text-[var(--text-secondary)]"}`}>
                   {isMe ? "나" : nicknameFromUuid(msg.device_uuid)}
                 </span>
                 <div
                   className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm ${
                     isMe
-                      ? "bg-[var(--accent)] text-[#0a0a1a] rounded-br-sm"
+                      ? "bg-[var(--accent)] text-[var(--background)] rounded-br-sm"
                       : "bg-[#252550] text-[var(--text-primary)] rounded-bl-sm"
                   }`}
                 >
                   {msg.text}
                 </div>
-                <span className="text-[10px] text-gray-600 mt-1">
+                <span className="text-[10px] text-[var(--text-tertiary)] mt-1">
                   {timeAgo(msg.created_at)}
                 </span>
               </div>
@@ -98,12 +98,12 @@ export default function ChatPanel({ messages, onSend, areaName }: ChatPanelProps
           onChange={(e) => setText(e.target.value)}
           placeholder="메시지를 입력하세요..."
           maxLength={300}
-          className="flex-1 bg-[#1a1a3a] border border-[var(--border)] rounded-full px-4 py-2.5 text-sm outline-none focus:border-[var(--accent)] placeholder:text-gray-600"
+          className="flex-1 bg-[var(--surface)] border border-[var(--border)] rounded-full px-4 py-2.5 text-sm outline-none focus:border-[var(--accent)] placeholder:text-[var(--text-tertiary)]"
         />
         <button
           type="submit"
           disabled={!text.trim()}
-          className="bg-[var(--accent)] text-[#0a0a1a] rounded-full px-5 py-2.5 font-semibold text-sm disabled:opacity-40"
+          className="bg-[var(--accent)] text-[var(--background)] rounded-full px-5 py-2.5 font-semibold text-sm disabled:opacity-40"
         >
           전송
         </button>
