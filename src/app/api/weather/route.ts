@@ -68,11 +68,11 @@ export async function GET() {
     }
     lastQueryTime = dateTime;
 
-    // 5분 이상 된 데이터 정리
+    // 기존 데이터 전부 삭제 후 새로 넣기 (중복 방지)
     await supabaseAdmin
       .from("weather_events")
       .delete()
-      .lt("created_at", new Date(now - 5 * 60 * 1000).toISOString());
+      .gte("created_at", "2000-01-01");
 
     // 한국 육지만 필터 (바다 번개 제외)
     // 대략 위도 33.0~38.6, 경도 125.0~131.9
