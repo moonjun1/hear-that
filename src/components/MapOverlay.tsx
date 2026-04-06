@@ -7,6 +7,7 @@ interface MapOverlayProps {
   reactionCount?: number;
   lightningCount?: number;
   isLive?: boolean;
+  onMyLocation?: () => void;
 }
 
 export default function MapOverlay({
@@ -14,34 +15,43 @@ export default function MapOverlay({
   reactionCount = 0,
   lightningCount = 0,
   isLive = false,
+  onMyLocation,
 }: MapOverlayProps) {
   return (
-    <div className="absolute top-5 left-5 right-5 z-10 flex items-start justify-between">
-      <div className="pointer-events-none">
-        <h1 className="text-2xl font-bold text-[var(--accent)] tracking-tight">
+    <div className="absolute top-3 left-3 right-3 md:top-5 md:left-5 md:right-5 z-10 flex items-start justify-between">
+      <div>
+        <h1 className="text-lg md:text-2xl font-bold text-[var(--accent)] tracking-tight pointer-events-none">
           ⚡ Hear That?
         </h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-xs md:text-sm text-gray-500 mt-0.5 pointer-events-none">
           천둥이 치면 같은 동네 반응을 본다
         </p>
-        <div className="flex items-center gap-2 mt-2">
+        <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
           {isLive ? (
-            <span className="bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded animate-pulse">
+            <span className="bg-red-600 text-white text-[10px] md:text-xs font-bold px-1.5 py-0.5 rounded animate-pulse pointer-events-none">
               ● LIVE
             </span>
           ) : (
-            <span className="bg-gray-700 text-gray-400 text-xs font-bold px-2 py-0.5 rounded">
+            <span className="bg-gray-700 text-gray-400 text-[10px] md:text-xs font-bold px-1.5 py-0.5 rounded pointer-events-none">
               대기중
             </span>
           )}
           {lightningCount > 0 && (
-            <span className="bg-[var(--accent)]/20 text-[var(--accent)] text-xs font-medium px-2 py-0.5 rounded">
-              ⚡ {lightningCount}건 감지
+            <span className="bg-[var(--accent)]/20 text-[var(--accent)] text-[10px] md:text-xs font-medium px-1.5 py-0.5 rounded pointer-events-none">
+              ⚡ {lightningCount}건
             </span>
+          )}
+          {onMyLocation && (
+            <button
+              onClick={onMyLocation}
+              className="bg-black/60 backdrop-blur-md text-gray-300 hover:text-[var(--accent)] text-[10px] md:text-xs px-1.5 py-0.5 rounded transition-colors"
+            >
+              📍 내 위치
+            </button>
           )}
         </div>
       </div>
-      <div className="pointer-events-auto">
+      <div className="pointer-events-auto shrink-0">
         <ShareButton areaName={areaName} reactionCount={reactionCount} />
       </div>
     </div>
