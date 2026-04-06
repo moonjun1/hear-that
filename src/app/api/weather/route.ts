@@ -15,7 +15,6 @@ const supabaseAdmin = createClient(
 // 서버 메모리 캐시 — 마지막 폴링 시간
 let lastPollTime = 0;
 let lastPollResult = { count: 0, queryTime: "" };
-let lastQueryTime = ""; // 마지막으로 조회한 기상청 dateTime
 
 function formatDateTimeKMA(date: Date): string {
   const y = date.getFullYear();
@@ -61,18 +60,12 @@ export async function GET() {
 
     const lightnings = Array.isArray(items) ? items : [items];
 
-    // 같은 시간대 데이터면 중복 insert 방지
-    if (dateTime === lastQueryTime) {
-      lastPollTime = now;
-      return NextResponse.json({ ...lastPollResult, cached: true });
-    }
-    lastQueryTime = dateTime;
-
     // 기존 데이터 전부 삭제 후 새로 넣기 (중복 방지)
+    // Supabase delete는 조건 필수 → neq로 전체 삭제
     await supabaseAdmin
       .from("weather_events")
       .delete()
-      .gte("created_at", "2000-01-01");
+      .neq("id", "00000000-0000-0000-0000-000000000000");
 
     // 한국 육지만 필터 (바다 번개 제외)
     // 대략 위도 33.0~38.6, 경도 125.0~131.9
