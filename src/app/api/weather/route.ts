@@ -40,15 +40,8 @@ export async function GET() {
 
     const items = data?.response?.body?.items?.item;
 
-    // 1. 기존 데이터 전부 삭제
-    const { error: delError } = await supabaseAdmin
-      .from("weather_events")
-      .delete()
-      .neq("id", "00000000-0000-0000-0000-000000000000");
-
-    if (delError) {
-      console.error("Delete failed:", delError.message);
-    }
+    // 1. 기존 데이터 전부 삭제 (RPC 함수로 확실하게)
+    await supabaseAdmin.rpc("clear_weather_events");
 
     if (!items) {
       return NextResponse.json({ count: 0, queryTime: dateTime });
