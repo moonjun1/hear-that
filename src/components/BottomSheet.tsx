@@ -6,42 +6,40 @@ interface BottomSheetProps {
   children: ReactNode;
 }
 
-type SheetState = "mini" | "half" | "full";
+type SheetState = "mini" | "full";
 
 const HEIGHTS: Record<SheetState, string> = {
   mini: "120px",
-  half: "50vh",
-  full: "85vh",
+  full: "75vh",
 };
 
 export default function BottomSheet({ children }: BottomSheetProps) {
   const [state, setState] = useState<SheetState>("mini");
   const startY = useRef(0);
-  const startHeight = useRef(0);
   const sheetRef = useRef<HTMLDivElement>(null);
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     startY.current = e.touches[0].clientY;
-    startHeight.current = sheetRef.current?.getBoundingClientRect().height ?? 0;
   }, []);
 
   const handleTouchEnd = useCallback(
     (e: React.TouchEvent) => {
       const deltaY = startY.current - e.changedTouches[0].clientY;
-      const threshold = 50;
+      const threshold = 30;
 
       if (deltaY > threshold) {
-        // 위로 스와이프
-        if (state === "mini") setState("half");
-        else if (state === "half") setState("full");
+        setState("full");
       } else if (deltaY < -threshold) {
-        // 아래로 스와이프
-        if (state === "full") setState("half");
-        else if (state === "half") setState("mini");
+        setState("mini");
       }
     },
-    [state]
+    []
   );
+
+  // 핸들 탭하면 토글
+  const handleTap = useCallback(() => {
+    setState((prev) => (prev === "mini" ? "full" : "mini"));
+  }, []);
 
   return (
     <div
@@ -54,6 +52,7 @@ export default function BottomSheet({ children }: BottomSheetProps) {
         className="flex justify-center py-3 cursor-grab active:cursor-grabbing"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
+        onClick={handleTap}
       >
         <div className="w-10 h-1 bg-gray-600 rounded-full" />
       </div>
