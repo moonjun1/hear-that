@@ -71,7 +71,13 @@ export function subscribeToReactions(
         }
       }
     )
-    .subscribe();
+    .subscribe((status) => {
+      if (status === "SUBSCRIBED") {
+        console.log("[hear-that] Realtime reactions connected");
+      } else if (status === "CHANNEL_ERROR") {
+        console.error("[hear-that] Realtime reactions error");
+      }
+    });
 
   return () => {
     supabase.removeChannel(channel);
