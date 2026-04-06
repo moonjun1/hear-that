@@ -24,7 +24,7 @@ export default function EmojiStats({ reactions }: EmojiStatsProps) {
       {sorted.map(([emoji, count]) => (
         <div key={emoji} className="flex items-center gap-1 shrink-0">
           <span className="text-lg">{emoji}</span>
-          <span className="text-xs text-gray-500">{count}</span>
+          <span className="text-xs text-[var(--text-secondary)]">{count}</span>
         </div>
       ))}
     </div>

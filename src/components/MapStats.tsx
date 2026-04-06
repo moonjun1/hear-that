@@ -21,7 +21,7 @@ export default function MapStats({
           <div className="text-xl font-bold text-[var(--accent)]">
             {reactionCount}
           </div>
-          <div className="text-[11px] text-gray-500">반응</div>
+          <div className="text-[11px] text-[var(--text-secondary)]">반응</div>
         </div>
       )}
       {reactionCount > 0 && radius > 0 && (
@@ -29,7 +29,7 @@ export default function MapStats({
           <div className="text-xl font-bold text-[var(--accent)]">
             {radius.toFixed(1)}km
           </div>
-          <div className="text-[11px] text-gray-500">반경</div>
+          <div className="text-[11px] text-[var(--text-secondary)]">반경</div>
         </div>
       )}
       {lastThunder && (
@@ -37,7 +37,7 @@ export default function MapStats({
           <div className="text-xl font-bold text-[var(--accent)]">
             {lastThunder}
           </div>
-          <div className="text-[11px] text-gray-500">마지막 천둥</div>
+          <div className="text-[11px] text-[var(--text-secondary)]">마지막 천둥</div>
         </div>
       )}
     </div>

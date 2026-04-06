@@ -403,7 +403,7 @@ const Map = forwardRef<MapHandle, MapProps>(({ onLocationReady }, ref) => {
 
   if (!MAPBOX_TOKEN) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-[#111128] text-gray-500">
+      <div className="flex-1 flex items-center justify-center bg-[var(--surface-dim)] text-[var(--text-secondary)]">
         <p>NEXT_PUBLIC_MAPBOX_TOKEN을 설정해주세요</p>
       </div>
     );

@@ -25,9 +25,9 @@ export default class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         this.props.fallback || (
-          <div className="flex-1 flex items-center justify-center bg-[#111128] text-gray-400">
+          <div className="flex-1 flex items-center justify-center bg-[var(--surface-dim)] text-[var(--text-secondary)]">
             <div className="text-center">
-              <p className="text-4xl mb-3">😵</p>
+              <p className="text-xl mb-2">😵</p>
               <p className="text-sm">지도를 불러오지 못했어요</p>
               <button
                 onClick={() => {

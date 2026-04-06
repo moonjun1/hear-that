@@ -23,7 +23,7 @@ export default function MapOverlay({
         <h1 className="text-lg md:text-2xl font-bold text-[var(--accent)] tracking-tight pointer-events-none">
           ⚡ Hear That?
         </h1>
-        <p className="text-xs md:text-sm text-gray-500 mt-0.5 pointer-events-none">
+        <p className="text-xs md:text-sm text-[var(--text-secondary)] mt-0.5 pointer-events-none">
           천둥이 치면 같은 동네 반응을 본다
         </p>
         <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
@@ -32,7 +32,7 @@ export default function MapOverlay({
               ● LIVE
             </span>
           ) : (
-            <span className="bg-gray-700 text-gray-400 text-[10px] md:text-xs font-bold px-1.5 py-0.5 rounded pointer-events-none">
+            <span className="bg-[var(--surface)] text-[var(--text-secondary)] text-[10px] md:text-xs font-bold px-1.5 py-0.5 rounded pointer-events-none">
               대기중
             </span>
           )}
@@ -44,7 +44,7 @@ export default function MapOverlay({
           {onMyLocation && (
             <button
               onClick={onMyLocation}
-              className="bg-black/60 backdrop-blur-md text-gray-300 hover:text-[var(--accent)] text-[10px] md:text-xs px-1.5 py-0.5 rounded transition-colors"
+              className="bg-black/60 backdrop-blur-md text-[var(--text-primary)] hover:text-[var(--accent)] text-[10px] md:text-xs px-1.5 py-0.5 rounded transition-colors"
             >
               📍 내 위치
             </button>

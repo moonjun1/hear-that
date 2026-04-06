@@ -37,7 +37,7 @@ export default function ToastContainer() {
       {toasts.map((t) => (
         <div
           key={t.id}
-          className="bg-[var(--accent)] text-[#0a0a1a] px-4 py-2 rounded-full text-sm font-semibold shadow-lg animate-[slideDown_0.3s_ease-out]"
+          className="bg-[var(--accent)] text-[var(--background)] px-4 py-2 rounded-full text-sm font-semibold shadow-lg animate-[slideDown_0.3s_ease-out]"
         >
           {t.emoji && <span className="mr-1">{t.emoji}</span>}
           {t.text}

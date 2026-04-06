@@ -48,7 +48,7 @@ export default function ShareButton({
     <div className="relative">
       <button
         onClick={handleShare}
-        className="bg-[var(--accent)] text-[#0a0a1a] rounded-full px-4 py-2 text-sm font-semibold hover:opacity-90 transition-opacity"
+        className="bg-[var(--accent)] text-[var(--background)] rounded-full px-4 py-2 text-sm font-semibold hover:opacity-90 transition-opacity"
       >
         {copied ? "복사됨!" : "공유"}
       </button>
