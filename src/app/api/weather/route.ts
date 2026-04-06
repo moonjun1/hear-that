@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { latLngToCell } from "h3-js";
 
 const KMA_API_URL =
-  "http://apis.data.go.kr/1360000/LgtInfoService/getLgt";
+  "https://apis.data.go.kr/1360000/LgtInfoService/getLgt";
 const H3_RESOLUTION = 5;
 const POLL_INTERVAL_MS = 60_000; // 1분
 
@@ -45,17 +45,12 @@ export async function GET() {
   const queryTime = new Date(now - 10 * 60 * 1000);
   const dateTime = formatDateTimeKMA(queryTime);
 
-  const params = new URLSearchParams({
-    ServiceKey: apiKey,
-    pageNo: "1",
-    numOfRows: "100",
-    dataType: "JSON",
-    lgtType: "1",
-    dateTime,
-  });
+  // 기상청 API는 인코딩된 키를 직접 URL에 넣어야 함 (URLSearchParams는 이중 인코딩)
+  const encodedKey = encodeURIComponent(apiKey);
+  const queryString = `ServiceKey=${encodedKey}&pageNo=1&numOfRows=100&dataType=JSON&lgtType=1&dateTime=${dateTime}`;
 
   try {
-    const res = await fetch(`${KMA_API_URL}?${params}`);
+    const res = await fetch(`${KMA_API_URL}?${queryString}`);
     const data = await res.json();
 
     const items = data?.response?.body?.items?.item;
