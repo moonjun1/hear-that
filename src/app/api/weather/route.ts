@@ -45,9 +45,8 @@ export async function GET() {
   const queryTime = new Date(now - 10 * 60 * 1000);
   const dateTime = formatDateTimeKMA(queryTime);
 
-  // 기상청 API는 인코딩된 키를 직접 URL에 넣어야 함 (URLSearchParams는 이중 인코딩)
-  const encodedKey = encodeURIComponent(apiKey);
-  const queryString = `ServiceKey=${encodedKey}&pageNo=1&numOfRows=100&dataType=JSON&lgtType=1&dateTime=${dateTime}`;
+  // 기상청 API: 인코딩된 키를 그대로 URL에 넣음
+  const queryString = `ServiceKey=${apiKey}&pageNo=1&numOfRows=100&dataType=JSON&lgtType=1&dateTime=${dateTime}`;
 
   try {
     const res = await fetch(`${KMA_API_URL}?${queryString}`);
