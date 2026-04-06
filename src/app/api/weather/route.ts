@@ -5,16 +5,13 @@ import { latLngToCell } from "h3-js";
 const KMA_API_URL =
   "https://apis.data.go.kr/1360000/LgtInfoService/getLgt";
 const H3_RESOLUTION = 5;
-const POLL_INTERVAL_MS = 60_000; // 1분
 
+// service_role로 RLS 바이패스
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  { auth: { autoRefreshToken: false, persistSession: false } }
 );
-
-// 서버 메모리 캐시 — 마지막 폴링 시간
-let lastPollTime = 0;
-let lastPollResult = { count: 0, queryTime: "" };
 
 function formatDateTimeKMA(date: Date): string {
   const y = date.getFullYear();
@@ -26,25 +23,15 @@ function formatDateTimeKMA(date: Date): string {
 }
 
 export async function GET() {
-  const now = Date.now();
-
-  // 1분 이내 재호출이면 캐시 리턴 (기상청 API 보호)
-  if (now - lastPollTime < POLL_INTERVAL_MS) {
-    return NextResponse.json({
-      ...lastPollResult,
-      cached: true,
-    });
-  }
-
   const apiKey = process.env.KMA_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: "KMA_API_KEY not set" }, { status: 500 });
   }
 
+  const now = Date.now();
   const queryTime = new Date(now - 10 * 60 * 1000);
   const dateTime = formatDateTimeKMA(queryTime);
 
-  // 기상청 API: 인코딩된 키를 그대로 URL에 넣음
   const queryString = `ServiceKey=${apiKey}&pageNo=1&numOfRows=100&dataType=JSON&lgtType=1&dateTime=${dateTime}`;
 
   try {
@@ -52,23 +39,24 @@ export async function GET() {
     const data = await res.json();
 
     const items = data?.response?.body?.items?.item;
-    if (!items) {
-      lastPollTime = now;
-      lastPollResult = { count: 0, queryTime: dateTime };
-      return NextResponse.json(lastPollResult);
-    }
 
-    const lightnings = Array.isArray(items) ? items : [items];
-
-    // 기존 데이터 전부 삭제 후 새로 넣기 (중복 방지)
-    // Supabase delete는 조건 필수 → neq로 전체 삭제
-    await supabaseAdmin
+    // 1. 기존 데이터 전부 삭제
+    const { error: delError } = await supabaseAdmin
       .from("weather_events")
       .delete()
       .neq("id", "00000000-0000-0000-0000-000000000000");
 
-    // 한국 육지만 필터 (바다 번개 제외)
-    // 대략 위도 33.0~38.6, 경도 125.0~131.9
+    if (delError) {
+      console.error("Delete failed:", delError.message);
+    }
+
+    if (!items) {
+      return NextResponse.json({ count: 0, queryTime: dateTime });
+    }
+
+    const lightnings = Array.isArray(items) ? items : [items];
+
+    // 2. 한국 육지만 필터
     const onLand = lightnings.filter(
       (l: { wgs84Lat: number; wgs84Lon: number }) =>
         l.wgs84Lat >= 33.0 &&
@@ -77,6 +65,11 @@ export async function GET() {
         l.wgs84Lon <= 131.9
     );
 
+    if (onLand.length === 0) {
+      return NextResponse.json({ count: 0, queryTime: dateTime });
+    }
+
+    // 3. 새 데이터 insert
     const events = onLand.map(
       (l: { wgs84Lat: number; wgs84Lon: number }) => ({
         lat: l.wgs84Lat,
@@ -87,18 +80,15 @@ export async function GET() {
       })
     );
 
-    const { error } = await supabaseAdmin
+    const { error: insError } = await supabaseAdmin
       .from("weather_events")
       .insert(events);
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (insError) {
+      return NextResponse.json({ error: insError.message }, { status: 500 });
     }
 
-    lastPollTime = now;
-    lastPollResult = { count: events.length, queryTime: dateTime };
-
-    return NextResponse.json(lastPollResult);
+    return NextResponse.json({ count: events.length, queryTime: dateTime });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
