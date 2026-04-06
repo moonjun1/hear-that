@@ -42,129 +42,87 @@ export default function Home() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [activeTab, setActiveTab] = useState<"reactions" | "chat">("reactions");
   const [userH3, setUserH3] = useState<string>("");
+  const [neighbors, setNeighbors] = useState<string[]>([]);
   const mapRef = useRef<MapHandle>(null);
-
-  // 구독 중복 방지
-  const unsubRef = useRef<(() => void) | null>(null);
-  const initialized = useRef(false);
-
-  // 피드 중복 방지
   const seenReactionIds = useRef<Set<string>>(new Set());
 
-  const addReaction = useCallback((r: Reaction) => {
-    if (seenReactionIds.current.has(r.id)) return;
-    seenReactionIds.current.add(r.id);
-    setReactions((prev) => [r, ...prev].slice(0, 200));
-    mapRef.current?.addReactionMarker(r);
+  // Map에서 위치 확정되면 호출
+  const handleLocationReady = useCallback((lat: number, lng: number) => {
+    setUserLat(lat);
+    setUserLng(lng);
+    getAreaName(lat, lng).then(setAreaName);
+    const h3 = getH3Index(lat, lng);
+    setUserH3(h3);
+    setNeighbors(getH3Neighbors(h3));
   }, []);
 
-  const handleLocationReady = useCallback(
-    (lat: number, lng: number) => {
-      // 중복 초기화 방지
-      if (initialized.current) return;
-      initialized.current = true;
+  // 위치 확정 후 → 데이터 로드 + Realtime 구독
+  useEffect(() => {
+    if (neighbors.length === 0) return;
 
-      setUserLat(lat);
-      setUserLng(lng);
-
-      getAreaName(lat, lng).then(setAreaName);
-
-      const h3Index = getH3Index(lat, lng);
-      const neighbors = getH3Neighbors(h3Index);
-      setUserH3(h3Index);
-
-      // 기존 구독 정리
-      unsubRef.current?.();
-
-      fetchRecentReactions(neighbors).then((existing) => {
-        const fiveMinAgo = Date.now() - 5 * 60 * 1000;
-        existing.forEach((r) => {
-          if (seenReactionIds.current.has(r.id)) return;
-          seenReactionIds.current.add(r.id);
-          if (new Date(r.created_at).getTime() > fiveMinAgo) {
-            mapRef.current?.addReactionMarker(r);
-          }
-        });
-        setReactions(existing);
-      });
-
-      const unsubReactions = subscribeToReactions(neighbors, addReaction);
-
-      fetchAllRecentLightning().then((all) => {
-        setLightningCount(all.length);
-        const fiveMinAgo = Date.now() - 5 * 60 * 1000;
-        all
-          .filter((e) => new Date(e.created_at).getTime() > fiveMinAgo)
-          .forEach((e) => mapRef.current?.addLightningMarker(e));
-      });
-
-      fetchRecentWeatherEvents(neighbors).then((events) => {
-        setWeatherEvents(events);
-        if (events.length > 0) {
-          const ago = Math.floor(
-            (Date.now() - new Date(events[0].created_at).getTime()) / 60000
-          );
-          setLastThunder(ago < 1 ? "방금" : `${ago}분 전`);
+    // 기존 반응 로드
+    fetchRecentReactions(neighbors).then((existing) => {
+      const fiveMinAgo = Date.now() - 5 * 60 * 1000;
+      existing.forEach((r) => {
+        seenReactionIds.current.add(r.id);
+        if (new Date(r.created_at).getTime() > fiveMinAgo) {
+          mapRef.current?.addReactionMarker(r);
         }
       });
+      setReactions(existing);
+    });
 
-      const unsubWeather = subscribeToWeatherEvents(neighbors, (event) => {
-        setWeatherEvents((prev) => [event, ...prev].slice(0, 50));
-        setLightningCount((prev) => prev + 1);
-        setLastThunder("방금");
-        mapRef.current?.addLightningMarker(event);
-      });
+    // 번개 로드
+    fetchAllRecentLightning().then((all) => {
+      setLightningCount(all.length);
+      const fiveMinAgo = Date.now() - 5 * 60 * 1000;
+      all
+        .filter((e) => new Date(e.created_at).getTime() > fiveMinAgo)
+        .forEach((e) => mapRef.current?.addLightningMarker(e));
+    });
 
-      // 채팅 로드 + 구독
-      fetchRecentChats(neighbors).then(setChatMessages);
-
-      const seenChatIds = new Set<string>();
-      const unsubChat = subscribeToChat(neighbors, (msg) => {
-        if (seenChatIds.has(msg.id)) return;
-        seenChatIds.add(msg.id);
-        setChatMessages((prev) => [...prev, msg].slice(-200));
-      });
-
-      unsubRef.current = () => {
-        unsubReactions();
-        unsubWeather();
-        unsubChat();
-      };
-    },
-    [addReaction]
-  );
-
-  // 컴포넌트 언마운트 시 구독 정리
-  useEffect(() => {
-    return () => {
-      unsubRef.current?.();
-    };
-  }, []);
-
-  const handleReact = useCallback(
-    async (emoji: string, text?: string) => {
-      const lat = userLat ?? 37.5665;
-      const lng = userLng ?? 126.978;
-      const result = await submitReaction(lat, lng, emoji, text);
-      if (result.success) {
-        showToast("반응 등록!", emoji);
-      } else {
-        showToast(result.error || "오류 발생");
+    // 날씨 이벤트 로드
+    fetchRecentWeatherEvents(neighbors).then((events) => {
+      setWeatherEvents(events);
+      if (events.length > 0) {
+        const ago = Math.floor(
+          (Date.now() - new Date(events[0].created_at).getTime()) / 60000
+        );
+        setLastThunder(ago < 1 ? "방금" : `${ago}분 전`);
       }
-    },
-    [userLat, userLng]
-  );
+    });
 
-  const radius =
-    userLat && userLng && reactions.length > 0
-      ? Math.max(
-          ...reactions
-            .slice(0, 20)
-            .map((r) => haversineDistance(userLat, userLng, r.lat, r.lng))
-        )
-      : 0;
+    // 채팅 로드
+    fetchRecentChats(neighbors).then(setChatMessages);
 
-  const isLive = lightningCount > 0 || reactions.length > 0;
+    // === Realtime 구독 ===
+    const unsubReactions = subscribeToReactions(neighbors, (r) => {
+      if (seenReactionIds.current.has(r.id)) return;
+      seenReactionIds.current.add(r.id);
+      setReactions((prev) => [r, ...prev].slice(0, 200));
+      mapRef.current?.addReactionMarker(r);
+    });
+
+    const unsubWeather = subscribeToWeatherEvents(neighbors, (event) => {
+      setWeatherEvents((prev) => [event, ...prev].slice(0, 50));
+      setLightningCount((prev) => prev + 1);
+      setLastThunder("방금");
+      mapRef.current?.addLightningMarker(event);
+    });
+
+    const seenChatIds = new Set<string>();
+    const unsubChat = subscribeToChat(neighbors, (msg) => {
+      if (seenChatIds.has(msg.id)) return;
+      seenChatIds.add(msg.id);
+      setChatMessages((prev) => [...prev, msg].slice(-200));
+    });
+
+    return () => {
+      unsubReactions();
+      unsubWeather();
+      unsubChat();
+    };
+  }, [neighbors]);
 
   // 1분마다 기상청 API 폴링
   useEffect(() => {
@@ -182,7 +140,7 @@ export default function Home() {
             });
           }
         })
-        .catch(() => {}); // 네트워크 실패는 조용히 무시 (다음 폴링에서 재시도)
+        .catch(() => {});
     };
 
     poll();
@@ -190,26 +148,37 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
+  const handleReact = useCallback(
+    async (emoji: string, text?: string) => {
+      const lat = userLat ?? 37.5665;
+      const lng = userLng ?? 126.978;
+      const result = await submitReaction(lat, lng, emoji, text);
+      if (result.success) {
+        showToast("반응 등록!", emoji);
+      } else {
+        showToast(result.error || "오류 발생");
+      }
+    },
+    [userLat, userLng]
+  );
+
   const handleSendChat = useCallback(
     async (text: string) => {
       if (!userH3) return;
-
-      // 낙관적 업데이트: 보내자마자 화면에 표시
       const optimistic: ChatMessage = {
         id: `optimistic-${Date.now()}`,
         text,
         h3_index: userH3,
-        device_uuid: typeof window !== "undefined"
-          ? localStorage.getItem("hear-that-device-uuid") || ""
-          : "",
+        device_uuid:
+          typeof window !== "undefined"
+            ? localStorage.getItem("hear-that-device-uuid") || ""
+            : "",
         created_at: new Date().toISOString(),
       };
       setChatMessages((prev) => [...prev, optimistic]);
-
       const result = await sendChat(userH3, text);
       if (!result.success) {
         showToast(result.error || "전송 실패");
-        // 실패 시 낙관적 메시지 제거
         setChatMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
       }
     },
@@ -223,6 +192,17 @@ export default function Home() {
     }
   }, [userLat, userLng]);
 
+  const radius =
+    userLat && userLng && reactions.length > 0
+      ? Math.max(
+          ...reactions
+            .slice(0, 20)
+            .map((r) => haversineDistance(userLat, userLng, r.lat, r.lng))
+        )
+      : 0;
+
+  const isLive = lightningCount > 0 || reactions.length > 0;
+
   return (
     <div className="flex h-screen">
       <ToastContainer />
@@ -233,9 +213,8 @@ export default function Home() {
           <Map ref={mapRef} onLocationReady={handleLocationReady} />
         </ErrorBoundary>
 
-        {/* 위치 fallback 안내 */}
         {userLat === 37.5665 && userLng === 126.978 && (
-          <div className="absolute bottom-5 right-5 z-10 bg-black/60 backdrop-blur-md px-3 py-2 rounded-lg text-xs text-gray-400 max-w-[200px]">
+          <div className="absolute bottom-5 right-5 z-10 bg-black/60 backdrop-blur-md px-3 py-2 rounded-lg text-xs text-[var(--text-secondary)] max-w-[200px]">
             📍 서울 기준 표시 중
           </div>
         )}
@@ -258,11 +237,9 @@ export default function Home() {
         />
       </div>
 
-      {/* Side panel content (shared between desktop and mobile) */}
       {(() => {
         const panelContent = (
           <div className="flex flex-col h-full">
-            {/* Tabs */}
             <div className="flex border-b border-[var(--border)]" role="tablist">
               <button
                 role="tab"
@@ -293,7 +270,6 @@ export default function Home() {
               </button>
             </div>
 
-            {/* Tab content */}
             {activeTab === "reactions" ? (
               <>
                 <FeedPanel
@@ -319,12 +295,9 @@ export default function Home() {
 
         return (
           <>
-            {/* Desktop */}
             <div className="hidden md:flex flex-col h-full w-[380px] bg-[var(--panel)] border-l border-[var(--border)]">
               {panelContent}
             </div>
-
-            {/* Mobile */}
             <BottomSheet>{panelContent}</BottomSheet>
           </>
         );
