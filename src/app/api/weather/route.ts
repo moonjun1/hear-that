@@ -41,7 +41,10 @@ export async function GET() {
     const items = data?.response?.body?.items?.item;
 
     // 1. 기존 데이터 전부 삭제 (RPC 함수로 확실하게)
-    await supabaseAdmin.rpc("clear_weather_events");
+    const { error: rpcError } = await supabaseAdmin.rpc("clear_weather_events");
+    if (rpcError) {
+      return NextResponse.json({ error: "Delete failed: " + rpcError.message }, { status: 500 });
+    }
 
     if (!items) {
       return NextResponse.json({ count: 0, queryTime: dateTime });
