@@ -4,21 +4,12 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import type { ChatMessage } from "@/types";
 import { nicknameFromUuid } from "@/lib/nickname";
 import { getDeviceUUID } from "@/lib/device";
+import { timeAgo } from "@/lib/format";
 
 interface ChatPanelProps {
   messages: ChatMessage[];
   onSend: (text: string) => void;
   areaName: string;
-}
-
-function timeAgo(dateStr: string): string {
-  const diff = Math.floor(
-    (Date.now() - new Date(dateStr).getTime()) / 1000
-  );
-  if (diff < 10) return "방금";
-  if (diff < 60) return `${diff}초 전`;
-  if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
-  return `${Math.floor(diff / 3600)}시간 전`;
 }
 
 export default function ChatPanel({ messages, onSend, areaName }: ChatPanelProps) {
@@ -85,7 +76,7 @@ export default function ChatPanel({ messages, onSend, areaName }: ChatPanelProps
                   className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm ${
                     isMe
                       ? "bg-[var(--accent)] text-[#0a0a1a] rounded-br-sm"
-                      : "bg-[#1a1a3a] text-gray-200 rounded-bl-sm"
+                      : "bg-[#252550] text-[var(--text-primary)] rounded-bl-sm"
                   }`}
                 >
                   {msg.text}

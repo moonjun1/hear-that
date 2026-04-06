@@ -263,23 +263,27 @@ export default function Home() {
         const panelContent = (
           <div className="flex flex-col h-full">
             {/* Tabs */}
-            <div className="flex border-b border-[var(--border)]">
+            <div className="flex border-b border-[var(--border)]" role="tablist">
               <button
+                role="tab"
+                aria-selected={activeTab === "reactions"}
                 onClick={() => setActiveTab("reactions")}
                 className={`flex-1 py-3 text-sm font-medium transition-colors ${
                   activeTab === "reactions"
                     ? "text-[var(--accent)] border-b-2 border-[var(--accent)]"
-                    : "text-gray-500 hover:text-gray-300"
+                    : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
                 }`}
               >
                 ⚡ 반응
               </button>
               <button
+                role="tab"
+                aria-selected={activeTab === "chat"}
                 onClick={() => setActiveTab("chat")}
                 className={`flex-1 py-3 text-sm font-medium transition-colors relative ${
                   activeTab === "chat"
                     ? "text-[var(--accent)] border-b-2 border-[var(--accent)]"
-                    : "text-gray-500 hover:text-gray-300"
+                    : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
                 }`}
               >
                 💬 채팅

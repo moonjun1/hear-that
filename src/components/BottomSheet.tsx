@@ -9,8 +9,8 @@ interface BottomSheetProps {
 type SheetState = "mini" | "full";
 
 const HEIGHTS: Record<SheetState, string> = {
-  mini: "120px",
-  full: "75vh",
+  mini: "160px",
+  full: "min(75vh, 500px)",
 };
 
 export default function BottomSheet({ children }: BottomSheetProps) {

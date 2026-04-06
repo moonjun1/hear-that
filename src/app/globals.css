@@ -4,8 +4,16 @@
   --background: #0a0a1a;
   --foreground: #e0e0e0;
   --accent: #ffc832;
+  --accent-glow: rgba(255, 200, 50, 0.5);
   --panel: #0f0f1f;
   --border: #1a1a3a;
+  --surface: #1a1a3a;
+  --surface-dim: #111128;
+  --text-primary: #e0e0e0;
+  --text-secondary: #9ca3af;
+  --text-tertiary: #6b7280;
+  --error: #ef4444;
+  --success: #22c55e;
 }
 
 @theme inline {
@@ -25,6 +33,20 @@ body {
   overflow: hidden;
 }
 
+/* Focus indicators (WCAG 2.4.7) */
+button:focus-visible,
+[role="button"]:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+input:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--accent);
+}
+
 /* Mapbox overrides */
 .mapboxgl-canvas {
   outline: none;
@@ -37,7 +59,7 @@ body {
 }
 
 .lightning-popup .mapboxgl-popup-tip {
-  border-top-color: #1a1a3a;
+  border-top-color: var(--surface);
 }
 
 @keyframes slideDown {
