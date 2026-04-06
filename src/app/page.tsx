@@ -233,20 +233,10 @@ export default function Home() {
           <Map ref={mapRef} onLocationReady={handleLocationReady} />
         </ErrorBoundary>
 
-        {/* 내 위치로 돌아가기 */}
-        {userLat && userLng && (
-          <button
-            onClick={flyToMyLocation}
-            className="absolute top-20 left-5 z-10 bg-black/60 backdrop-blur-md px-3 py-2 rounded-lg text-sm text-gray-300 hover:text-[var(--accent)] transition-colors"
-          >
-            📍 내 위치
-          </button>
-        )}
-
         {/* 위치 fallback 안내 */}
         {userLat === 37.5665 && userLng === 126.978 && (
-          <div className="absolute top-20 right-5 z-10 bg-black/60 backdrop-blur-md px-3 py-2 rounded-lg text-xs text-gray-400 max-w-[200px]">
-            📍 위치를 가져올 수 없어 서울 기준으로 표시 중
+          <div className="absolute bottom-5 right-5 z-10 bg-black/60 backdrop-blur-md px-3 py-2 rounded-lg text-xs text-gray-400 max-w-[200px]">
+            📍 서울 기준 표시 중
           </div>
         )}
         <ThunderWave
@@ -259,6 +249,7 @@ export default function Home() {
           reactionCount={reactions.length}
           lightningCount={lightningCount}
           isLive={isLive}
+          onMyLocation={flyToMyLocation}
         />
         <MapStats
           reactionCount={reactions.length}
