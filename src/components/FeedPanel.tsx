@@ -4,6 +4,7 @@ import type { Reaction, WeatherEvent } from "@/types";
 import { nicknameFromUuid } from "@/lib/nickname";
 import { getDeviceUUID } from "@/lib/device";
 import { haversineDistance } from "@/lib/geo";
+import { timeAgo } from "@/lib/format";
 import EmojiStats from "./EmojiStats";
 
 interface FeedPanelProps {
@@ -14,16 +15,6 @@ interface FeedPanelProps {
   lightningCount?: number;
   lastThunder?: string | null;
   onLightningClick?: () => void;
-}
-
-function timeAgo(dateStr: string): string {
-  const diff = Math.floor(
-    (Date.now() - new Date(dateStr).getTime()) / 1000
-  );
-  if (diff < 10) return "방금";
-  if (diff < 60) return `${diff}초 전`;
-  if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
-  return `${Math.floor(diff / 3600)}시간 전`;
 }
 
 function distanceLabel(
@@ -109,7 +100,7 @@ export default function FeedPanel({
             return (
               <div
                 key={r.id}
-                className={`px-5 py-3 border-b border-white/5 animate-[slideIn_0.3s_ease-out] ${
+                className={`px-5 py-3 border-b border-white/8 animate-[slideIn_0.3s_ease-out] ${
                   isMe ? "bg-[var(--accent)]/5" : ""
                 }`}
               >
