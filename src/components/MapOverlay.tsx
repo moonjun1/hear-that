@@ -18,7 +18,7 @@ export default function MapOverlay({
   onMyLocation,
 }: MapOverlayProps) {
   return (
-    <div className="absolute top-3 left-3 right-3 md:top-5 md:left-5 md:right-5 z-10 flex items-start justify-between">
+    <div className="absolute top-[max(12px,env(safe-area-inset-top))] left-3 right-3 md:top-5 md:left-5 md:right-5 z-10 flex items-start justify-between">
       <div>
         <h1 className="text-lg md:text-2xl font-bold text-[var(--accent)] tracking-tight pointer-events-none">
           ⚡ Hear That?
@@ -28,23 +28,23 @@ export default function MapOverlay({
         </p>
         <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
           {isLive ? (
-            <span className="bg-red-600 text-white text-[10px] md:text-xs font-bold px-1.5 py-0.5 rounded animate-pulse pointer-events-none">
+            <span className="bg-red-600 text-white text-xs md:text-xs font-bold px-1.5 py-0.5 rounded animate-pulse pointer-events-none">
               ● LIVE
             </span>
           ) : (
-            <span className="bg-[var(--surface)] text-[var(--text-secondary)] text-[10px] md:text-xs font-bold px-1.5 py-0.5 rounded pointer-events-none">
+            <span className="bg-[var(--surface)] text-[var(--text-secondary)] text-xs md:text-xs font-bold px-1.5 py-0.5 rounded pointer-events-none">
               대기중
             </span>
           )}
           {lightningCount > 0 && (
-            <span className="bg-[var(--accent)]/20 text-[var(--accent)] text-[10px] md:text-xs font-medium px-1.5 py-0.5 rounded pointer-events-none">
+            <span className="bg-[var(--accent)]/20 text-[var(--accent)] text-xs md:text-xs font-medium px-1.5 py-0.5 rounded pointer-events-none">
               ⚡ {lightningCount}건
             </span>
           )}
           {onMyLocation && (
             <button
               onClick={onMyLocation}
-              className="bg-black/60 backdrop-blur-md text-[var(--text-primary)] hover:text-[var(--accent)] text-[10px] md:text-xs px-1.5 py-0.5 rounded transition-colors"
+              className="bg-black/60 backdrop-blur-md text-[var(--text-primary)] hover:text-[var(--accent)] text-xs px-2.5 py-1.5 min-h-[36px] rounded transition-colors"
             >
               📍 내 위치
             </button>

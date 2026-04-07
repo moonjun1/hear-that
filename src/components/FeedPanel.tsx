@@ -110,12 +110,12 @@ export default function FeedPanel({
                       {nicknameFromUuid(r.device_uuid)}
                     </span>
                     {isMe && (
-                      <span className="text-[10px] bg-[var(--accent)]/20 text-[var(--accent)] px-1.5 py-0.5 rounded">
+                      <span className="text-xs bg-[var(--accent)]/20 text-[var(--accent)] px-1.5 py-0.5 rounded">
                         나
                       </span>
                     )}
                   </span>
-                  <span className="text-[11px] text-[var(--text-tertiary)]">
+                  <span className="text-xs text-[var(--text-tertiary)]">
                     {timeAgo(r.created_at)}
                   </span>
                 </div>
@@ -128,7 +128,7 @@ export default function FeedPanel({
                   <p className="text-3xl">{r.emoji}</p>
                 )}
                 {(userLat || userLng) && (
-                  <div className="text-[11px] text-[var(--text-tertiary)] mt-1">
+                  <div className="text-xs text-[var(--text-tertiary)] mt-1">
                     {distanceLabel(userLat, userLng, r.lat, r.lng)}
                   </div>
                 )}

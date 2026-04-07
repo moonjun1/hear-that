@@ -124,9 +124,10 @@ export default function Home() {
     };
   }, [neighbors]);
 
-  // 1분마다 기상청 API 폴링
+  // 1분마다 기상청 API 폴링 (백그라운드 시 중지)
   useEffect(() => {
     const poll = () => {
+      if (document.hidden) return; // 백그라운드면 스킵
       fetch("/api/weather")
         .then((r) => r.json())
         .then((data) => {
@@ -214,7 +215,7 @@ export default function Home() {
         </ErrorBoundary>
 
         {userLat === 37.5665 && userLng === 126.978 && (
-          <div className="absolute bottom-5 right-5 z-10 bg-black/60 backdrop-blur-md px-3 py-2 rounded-lg text-xs text-[var(--text-secondary)] max-w-[200px]">
+          <div className="absolute bottom-[232px] md:bottom-5 right-4 md:right-5 z-10 bg-black/60 backdrop-blur-md px-3 py-2 rounded-lg text-xs text-[var(--text-secondary)] max-w-[200px]">
             📍 서울 기준 표시 중
           </div>
         )}
