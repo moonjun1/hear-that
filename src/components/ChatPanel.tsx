@@ -81,7 +81,7 @@ export default function ChatPanel({ messages, onSend, areaName }: ChatPanelProps
                 >
                   {msg.text}
                 </div>
-                <span className="text-[10px] text-[var(--text-tertiary)] mt-1">
+                <span className="text-xs text-[var(--text-tertiary)] mt-1">
                   {timeAgo(msg.created_at)}
                 </span>
               </div>
